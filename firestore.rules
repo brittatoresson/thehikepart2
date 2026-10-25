@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == 'guest';
+      allow update: if signedIn() && request.auth.uid == uid
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+      allow delete: if false;
+    }
+
+    match /wishes/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.votes == []
+        && request.resource.data.voteCount == 0
+        && !request.resource.data.keys().hasAny(['status']);
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow delete: if isAdmin();
+    }
+
+    match /photos/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.storagePath is string
+        && request.resource.data.storagePath.matches('photos/' + request.auth.uid + '_[0-9]+[.][^/]+');
+      allow update, delete: if false;
+    }
+
+    match /notifications/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /notification_queue/{id} {
+      allow create: if isAdmin();
+      allow read, update, delete: if false;
+    }
+
+    match /rsvps/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+  }
+}

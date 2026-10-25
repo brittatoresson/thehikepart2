@@ -1,0 +1,42 @@
+[
+  {
+    "id": "location",
+    "q": "Var äger bröllopet rum?",
+    "a": "Bröllopet hålls i Östergötland, Sverige. Exakt adress och vägbeskrivning skickas ut separat till inbjudna gäster."
+  },
+  {
+    "id": "dress-code",
+    "q": "Vad är klädkoden?",
+    "a": "Vi önskar festlig klädsel. Gärna något som passar för en sommardag utomhus. Vi ber er undvika helvitt."
+  },
+  {
+    "id": "children",
+    "q": "Kan jag ta med barn?",
+    "a": "Vi älskar era barn, men detta är ett barnfritt bröllop. Undantag gäller för ammande spädbarn — hör av er till oss om ni har frågor."
+  },
+  {
+    "id": "accommodation",
+    "q": "Finns det möjlighet till övernattning?",
+    "a": "Ja! Vi har reserverat rum på ett närliggande boende. Mer information om detta kommer i inbjudan."
+  },
+  {
+    "id": "rsvp",
+    "q": "Hur gör jag med O.S.A.?",
+    "a": "Svar önskas senast 1 april 2027. Använd kontaktsidan i denna app eller svara på ert inbjudningskort."
+  },
+  {
+    "id": "dietary",
+    "q": "Kan jag ange specialkost?",
+    "a": "Absolut. Vi tar hänsyn till allergier och speciella kostbehov. Ange detta i samband med er O.S.A."
+  },
+  {
+    "id": "ceremony",
+    "q": "Är ceremonin inomhus eller utomhus?",
+    "a": "Vigseln planeras utomhus och middagen inomhus. Ha gärna med ett extra lager för kvällen!"
+  },
+  {
+    "id": "parking",
+    "q": "Finns det parkering?",
+    "a": "Ja, det finns gott om parkering på plats. Kör försiktigt — vi hoppas att ni firar med oss länge in på natten!"
+  }
+]

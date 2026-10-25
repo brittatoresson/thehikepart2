@@ -1,0 +1,19 @@
+{
+  "name": "June 5th – Britta & Johanna",
+  "short_name": "June 5th",
+  "description": "Bröllopsapp för Britta & Johanna, 5 juni 2027, Östergötland",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F1E8DA",
+  "theme_color": "#52694C",
+  "orientation": "portrait-primary",
+  "lang": "sv",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
