@@ -19,6 +19,10 @@ exports.voteForWish = onCall({ region: 'europe-west1' }, async request => {
   if (typeof wishId !== 'string' || !wishId || wishId.includes('/')) {
     throw new HttpsError('invalid-argument', 'Ogiltig musikönskning.')
   }
+  const voted = request.data?.voted ?? true
+  if (typeof voted !== 'boolean') {
+    throw new HttpsError('invalid-argument', 'Ogiltigt röstval.')
+  }
 
   const db = getFirestore()
   const wishRef = db.collection('wishes').doc(wishId)
@@ -29,16 +33,16 @@ exports.voteForWish = onCall({ region: 'europe-west1' }, async request => {
     }
     const wish = snapshot.data()
     const uid = request.auth.uid
-    if (wish.userId === uid) {
+    if (wish.userId === uid && voted) {
       throw new HttpsError('failed-precondition', 'Du kan inte rösta på din egen önskning.')
     }
     const votes = wish.votes ?? []
-    if (votes.includes(uid)) {
-      return { voteCount: votes.length }
+    if (votes.includes(uid) === voted) {
+      return { voteCount: votes.length, voted }
     }
-    const updatedVotes = [...votes, uid]
+    const updatedVotes = voted ? [...votes, uid] : votes.filter(voter => voter !== uid)
     transaction.update(wishRef, { votes: updatedVotes, voteCount: updatedVotes.length })
-    return { voteCount: updatedVotes.length }
+    return { voteCount: updatedVotes.length, voted }
   })
 })
 

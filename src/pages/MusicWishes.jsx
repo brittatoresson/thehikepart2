@@ -6,6 +6,7 @@ import {
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import SpotifySearchLink from '../components/SpotifySearchLink'
 
 export default function MusicWishes() {
   const { currentUser, userProfile } = useAuth()
@@ -18,7 +19,6 @@ export default function MusicWishes() {
   const [votingId, setVotingId] = useState(null)
   const voteInFlight = useRef(false)
   const [error, setError] = useState('')
-  const [voteResult, setVoteResult] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
@@ -65,22 +65,27 @@ export default function MusicWishes() {
   }
 
   async function handleVote(wish) {
-    if (voteInFlight.current || wish.userId === currentUser.uid || wish.votes?.includes(currentUser.uid)) return
+    const voted = !wish.votes?.includes(currentUser.uid)
+    if (voteInFlight.current || (wish.userId === currentUser.uid && voted)) return
     voteInFlight.current = true
     setVotingId(wish.id)
     setError('')
-    setVoteResult('')
     try {
-      const { data } = await httpsCallable(functions, 'voteForWish')({ wishId: wish.id })
+      const { data } = await httpsCallable(functions, 'voteForWish')({ wishId: wish.id, voted })
+      if (data.voted !== voted) {
+        throw new Error('Servern bekräftade inte det begärda röstvalet.')
+      }
       setWishes(previous => previous.map(item => item.id === wish.id
         ? {
           ...item,
-          votes: [...new Set([...(item.votes ?? []), currentUser.uid])],
-          voteCount: Math.max(item.votes?.length ?? 0, data.voteCount),
+          votes: voted
+            ? [...new Set([...(item.votes ?? []), currentUser.uid])]
+            : (item.votes ?? []).filter(uid => uid !== currentUser.uid),
+          voteCount: data.voteCount,
         }
         : item).sort((a, b) => (b.voteCount ?? 0) - (a.voteCount ?? 0)))
-      setVoteResult(`Din röst på ${wish.song} är registrerad. Rösten kan inte tas bort.`)
     } catch (err) {
+      console.error('Kunde inte uppdatera röst', err)
       setError(err.code === 'functions/not-found'
         ? 'Musikönskningen finns inte kvar.'
         : 'Kunde inte registrera din röst. Kontrollera anslutningen och försök igen.')
@@ -144,10 +149,8 @@ export default function MusicWishes() {
           <span className="music-count">{wishes.length}</span>
         )}
       </h2>
-      <p className="music-vote-help">Du kan rösta en gång per låt på andras önskningar. Rösten kan inte tas bort.</p>
       {error && <p className="auth-error" role="alert">{error}</p>}
       {loadError && <p className="auth-error" role="alert">{loadError}</p>}
-      {voteResult && <p className="music-success" role="status">{voteResult}</p>}
 
       {loading ? <p className="music-empty">Laddar önskningar…</p> : !loadError && wishes.length === 0 ? (
         <p className="music-empty">Inga önskningar ännu — bli den första!</p>
@@ -170,16 +173,17 @@ export default function MusicWishes() {
                     <p className="music-item-message">"{wish.message}"</p>
                   )}
                   <p className="music-item-by">— {wish.displayName}</p>
+                  <SpotifySearchLink song={wish.song} artist={wish.artist} />
                 </div>
                 <button
                   className={`vote-btn${hasVoted ? ' vote-btn--voted' : ''}`}
                   onClick={() => handleVote(wish)}
-                  disabled={isOwn || hasVoted || votingId !== null}
-                  aria-label={hasVoted ? `Du har röstat på ${wish.song}` : `Rösta på ${wish.song}`}
+                  disabled={(isOwn && !hasVoted) || votingId !== null}
+                  aria-label={hasVoted ? `Ta bort din röst på ${wish.song}` : `Rösta på ${wish.song}`}
                   aria-pressed={Boolean(hasVoted)}
                   aria-busy={votingId === wish.id}
-                  title={isOwn ? 'Du kan inte rösta på din egen önskning'
-                    : hasVoted ? 'Din röst är registrerad och kan inte tas bort' : 'Rösta'}
+                  title={hasVoted ? 'Ta bort din röst'
+                    : isOwn ? 'Du kan inte rösta på din egen önskning' : 'Rösta'}
                 >
                   <span className="vote-icon" aria-hidden="true">♥</span>
                   <span className="vote-count">{wish.voteCount ?? 0}</span>

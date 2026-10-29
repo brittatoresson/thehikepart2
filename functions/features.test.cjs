@@ -19,16 +19,28 @@ test('CSV contains all RSVP people, declining and unanswered registrations', () 
       { name: 'Åsa', dietary: 'Nötallergi, vegetarisk' },
       { name: 'Bo', dietary: '' },
     ] }],
-    ['two', { attending: false, guests: [{ name: 'Gammalt svar', dietary: 'Ska inte exporteras' }] }],
+    ['two', { attending: false, guests: [
+      { name: 'Östen', dietary: 'Ska inte exporteras' },
+      { name: 'Eva', dietary: 'Ska inte exporteras' },
+    ] }],
   ])
   assert.equal(buildGuestCsv(users, rsvps), '\uFEFF' + [
     '"Namn";"E-post";"Närvaro";"Allergier / matpreferenser";"Registrerad av"',
     '"Åsa";"asa@example.test";"Kommer";"Nötallergi, vegetarisk";"Åsa"',
     '"Bo";"asa@example.test";"Kommer";"";"Åsa"',
     '"Östen";"osten@example.test";"Kommer ej";"";"Östen"',
+    '"Eva";"osten@example.test";"Kommer ej";"";"Östen"',
     '"Elsa";"elsa@example.test";"Ej svarat";"";"Elsa"',
     '',
   ].join('\r\n'))
+})
+
+test('CSV preserves legacy declining replies without a guest list', () => {
+  const csv = buildGuestCsv(
+    [{ id: 'legacy', displayName: 'Kontakt', email: 'kontakt@example.test' }],
+    new Map([['legacy', { attending: false, guests: [] }]]),
+  )
+  assert.ok(csv.includes('"Kontakt";"kontakt@example.test";"Kommer ej";"";"Kontakt"'))
 })
 
 test('CSV escapes separators, quotes and newlines and protects against Excel formulas', () => {
@@ -62,9 +74,11 @@ test('voting requires authentication and a valid document ID', async () => {
     await assert.rejects(voteForWish.run({ auth: { uid: 'guest' }, data: { wishId } }),
       { code: 'invalid-argument' })
   }
+  await assert.rejects(voteForWish.run({ auth: { uid: 'guest' }, data: { wishId: 'song', voted: 'false' } }),
+    { code: 'invalid-argument' })
 })
 
-test('voting is permanent, idempotent and counts votes from transaction data', async t => {
+test('voting and removing a vote are idempotent and preserve other votes', async t => {
   const db = getFirestore()
   let wish = { userId: 'owner', votes: ['first'], voteCount: 99 }
   const updates = []
@@ -85,13 +99,18 @@ test('voting is permanent, idempotent and counts votes from transaction data', a
     },
   }))
   const request = { auth: { uid: 'second' }, data: { wishId: 'song' } }
-  assert.deepEqual(await voteForWish.run(request), { voteCount: 2 })
-  assert.deepEqual(await voteForWish.run(request), { voteCount: 2 })
+  assert.deepEqual(await voteForWish.run(request), { voteCount: 2, voted: true })
+  assert.deepEqual(await voteForWish.run(request), { voteCount: 2, voted: true })
   assert.equal(updates.length, 1)
   assert.deepEqual(wish.votes, ['first', 'second'])
+  const remove = { ...request, data: { wishId: 'song', voted: false } }
+  assert.deepEqual(await voteForWish.run(remove), { voteCount: 1, voted: false })
+  assert.deepEqual(await voteForWish.run(remove), { voteCount: 1, voted: false })
+  assert.deepEqual(wish.votes, ['first'])
+  assert.equal(updates.length, 2)
   await assert.rejects(voteForWish.run({ ...request, auth: { uid: 'owner' } }),
     { code: 'failed-precondition' })
-  assert.equal(updates.length, 1)
+  assert.equal(updates.length, 2)
 })
 
 test('a transaction retry preserves another guest vote', async t => {
@@ -110,7 +129,7 @@ test('a transaction retry preserves another guest vote', async t => {
     })
   })
   assert.deepEqual(await voteForWish.run({ auth: { uid: 'guest' }, data: { wishId: 'song' } }),
-    { voteCount: 2 })
+    { voteCount: 2, voted: true })
   assert.deepEqual(finalUpdate, { votes: ['other', 'guest'], voteCount: 2 })
 })
 

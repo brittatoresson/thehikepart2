@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import SpotifySearchLink from '../components/SpotifySearchLink'
 import {
   collection, onSnapshot, query, orderBy,
   deleteDoc, updateDoc, doc, addDoc, serverTimestamp,
@@ -127,7 +128,9 @@ function OsaTab() {
     .filter(r => r.attending === true)
     // Ett ja-svar utan namnrader är minst kontaktpersonen själv (samma som CSV-exporten).
     .reduce((sum, r) => sum + (r.guests?.length || 1), 0)
-  const declining = users.filter(u => rsvps[u.id]?.attending === false)
+  const decliningGuestCount = Object.values(rsvps)
+    .filter(r => r.attending === false)
+    .reduce((sum, r) => sum + (r.guests?.length || 1), 0)
   const pending = users.filter(u => !rsvps[u.id])
 
   const dietaryCounts = Object.values(rsvps)
@@ -150,7 +153,7 @@ function OsaTab() {
           <p className="osa-summary-label">Kommer</p>
         </div>
         <div className="osa-summary-item osa-summary-item--no">
-          <p className="osa-summary-num">{declining.length}</p>
+          <p className="osa-summary-num">{decliningGuestCount}</p>
           <p className="osa-summary-label">Kommer ej</p>
         </div>
         <div className="osa-summary-item osa-summary-item--pending">
@@ -183,12 +186,12 @@ function OsaTab() {
             <div key={u.id} className="admin-row admin-row--osa">
               <div className="admin-row-body">
                 <p className="admin-row-title">{u.displayName}</p>
-                {rsvp?.attending && rsvp.guests?.length > 0 && (
+                {rsvp && rsvp.guests?.length > 0 && (
                   <div className="osa-guest-list">
                     {rsvp.guests.map((g, i) => (
                       <div key={i} className="osa-guest-item">
                         <span className="osa-guest-name">{g.name}</span>
-                        {g.dietary && <span className="osa-guest-dietary">{g.dietary}</span>}
+                        {rsvp.attending === true && g.dietary && <span className="osa-guest-dietary">{g.dietary}</span>}
                       </div>
                     ))}
                   </div>
@@ -269,6 +272,7 @@ function MusicTab() {
               <p className="admin-row-meta">
                 {w.displayName} · {w.voteCount ?? 0} röster
               </p>
+              <SpotifySearchLink song={w.song} artist={w.artist} />
             </div>
             <div className="admin-row-actions">
               <button

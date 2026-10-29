@@ -35,6 +35,11 @@
     "a": "Vigseln planeras utomhus och middagen inomhus. Ha gärna med ett extra lager för kvällen!"
   },
   {
+    "id": "transport",
+    "q": "Hur funkar transport under dagen?",
+    "a": "Information om transport under dagen kommer närmare bröllopet."
+  },
+  {
     "id": "parking",
     "q": "Finns det parkering?",
     "a": "Ja, det finns gott om parkering på plats. Kör försiktigt — vi hoppas att ni firar med oss länge in på natten!"

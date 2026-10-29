@@ -77,7 +77,9 @@ function RsvpModal({ onClose }) {
         setAttending(d.attending ?? null)
         setHasExisting(true)
       }
-      setGuests(d?.guests?.length ? d.guests : [{ name: ownName, dietary: '' }])
+      setGuests(d?.guests?.length
+        ? d.guests.map(g => ({ ...g, dietary: d.attending === false ? '' : g.dietary ?? '' }))
+        : [{ name: ownName, dietary: '' }])
       setLoading(false)
     }).catch(err => {
       console.error('Kunde inte hämta OSA-svaret', err)
@@ -113,22 +115,24 @@ function RsvpModal({ onClose }) {
 
   function chooseAttending(value) {
     setAttending(value)
+    if (!value) setGuests(current => current.map(g => ({ ...g, dietary: '' })))
     setError('')
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (attending === null) return
-    if (attending && guests.some(g => !g.name.trim())) {
+    if (guests.some(g => !g.name.trim())) {
       setError('Fyll i namn på alla rader, eller ta bort tomma rader med ✕.')
       return
     }
     setError('')
     setSubmitting(true)
     try {
-      const cleanGuests = attending
-        ? guests.map(g => ({ name: g.name.trim(), dietary: g.dietary.trim() }))
-        : []
+      const cleanGuests = guests.map(g => ({
+        name: g.name.trim(),
+        dietary: attending ? g.dietary.trim() : '',
+      }))
       const data = {
         userId: currentUser.uid,
         displayName: userProfile?.displayName ?? currentUser.displayName ?? '',
@@ -194,11 +198,11 @@ function RsvpModal({ onClose }) {
               </button>
             </div>
 
-            {attending === true && (
+            {attending !== null && (
               <div className="rsvp-guests">
                 <div className="rsvp-guests-header">
                   <span>Namn</span>
-                  <span>Allergi / matpreferens</span>
+                  {attending && <span>Allergi / matpreferens</span>}
                 </div>
                 {guests.map((g, i) => (
                   <div key={i} className="rsvp-guest-row">
@@ -211,13 +215,13 @@ function RsvpModal({ onClose }) {
                       aria-label={`Namn, gäst ${i + 1}`}
                       required
                     />
-                    <input
+                    {attending && <input
                       type="text"
                       placeholder="T.ex. glutenfri"
                       value={g.dietary}
                       onChange={e => updateGuest(i, 'dietary', e.target.value)}
                       className="rsvp-guest-input rsvp-guest-input--dietary"
-                    />
+                    />}
                     {guests.length > 1 && (
                       <button
                         type="button"

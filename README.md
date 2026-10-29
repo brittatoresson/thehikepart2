@@ -28,10 +28,15 @@ Startsidan använder designkitets två separata blomsterillustrationer från [sr
 
 ## Musikröster och gästexport
 
-- Musikröstning använder callable-funktionen `voteForWish` i `europe-west1`. Inloggning krävs. En Firestore-transaktion lägger till gästens UID högst en gång och beräknar antalet från röstlistan. Egna önskningar kan inte röstas på och en registrerad röst kan inte tas bort.
+Klädinspiration finns på `/dress-code` för inloggade gäster. Den bifogade klädguiden visas oförändrad och kan öppnas i full storlek. FAQ-posten med ID `dress-code` får automatiskt en inspirationslänk på en ny rad efter sitt svar; adminens sparade svar skrivs inte över.
+
+- ”Sök på Spotify” under låtönskningar i gäst- och adminvyn öppnar Spotify-sökning med låttitel och eventuell artist i ny flik. Länken använder `/search/results/<URL-kodad söktext>`, verifierat med ifyllt sökfält och sökträffar i Spotifys webbspelare. Fungerar även för befintliga önskningar utan nya databasfält eller Spotify API. Länken garanterar inte en specifik inspelning.
+
+- Musikröstning använder callable-funktionen `voteForWish` i `europe-west1`. Inloggning krävs. Hjärtat lägger till eller tar bort den egna rösten. Servern tar emot önskat läge (`voted: true/false`), så upprepade anrop inte växlar rösten oavsiktligt. Transaktionen bevarar andras röster och räknar från listan. Egna önskningar kan inte röstas på. Publicera uppdaterad `voteForWish` före webbappen; äldre klienters anrop utan `voted` betyder fortsatt lägg till.
 - Gästlistan exporteras via callable-funktionen `exportGuests` i samma region. Funktionen kontrollerar adminrollen i användarens Firestore-profil innan den hämtar användare och OSA-svar.
 - FAQ läses av inloggade gäster via `getFaqs` och hanteras i adminpanelen via `saveFaqs` i `europe-west1`. Funktionen kontrollerar adminrollen server-side. En versionskontrollerad Firestore-transaktion sparar hela ordningen i `siteContent/faq`; befintliga frågor är startinnehåll tills admin sparar första ändringen.
 - FAQ-frågor och svar kan läggas till, redigeras, tas bort och flyttas upp/ner. Ändringar blir synliga för gäster efter att de sparats.
+- Standardfrågorna innehåller ”Hur funkar transport under dagen?” med svaret ”Information om transport under dagen kommer närmare bröllopet.” Redan sparad FAQ ersätts inte av nya standardfrågor: lägg till frågan via admin och spara om den saknas i den publicerade listan.
 - Webbadresser som börjar med `https://` eller `http://` i FAQ-svar visas som klickbara länkar. Klistra in webbplatsens adress följd av `/?osa=1` för att öppna OSA-dialogen på startsidan; lokalt används `http://localhost:5173/?osa=1`. OSA kräver inloggning precis som startsidan.
 - Bildgalleriet visar alla foton i uppladdningstidsordning (nyaste först) och kan filtreras på uppladdarens stabila användar-ID. Poster utan uppladdar-ID visas fortfarande under “Alla uppladdare”.
 - Uppladdaren kan ta bort sin egen bild med bekräftelse före 7 juni 2027 kl. 00.00 svensk sommartid (2027-06-06 22:00 UTC). Efter stoppdatumet nekar serverfunktionen gästborttagning; admin kan fortfarande radera. Gäst- och adminradering använder callable-funktionen `deletePhoto`, som kontrollerar roll/ägarskap, tar bort Storage-filen och därefter Firestore-posten.
@@ -44,7 +49,7 @@ Startsidan använder designkitets två separata blomsterillustrationer från [sr
 
 - Registrering skapar Auth-kontot och därefter profilen i `users`. Misslyckas profilen tas Auth-kontot bort igen, så att gästen kan försöka på nytt med samma e-post. Konton som blev utan profil före denna ändring rättas inte automatiskt.
 - Appen lyssnar på den inloggades profil i stället för att läsa den en gång. Namnet syns direkt efter registrering och appen fastnar inte på laddningsskärmen om den startas offline.
-- OSA: första namnraden förifylls med gästens namn. Vid ”Ja” måste varje rad ha ett namn; felaktigt tillagda rader tas bort med ✕. Allergi/matpreferens är frivilligt. Äldre ja-svar utan namnrader räknas som 1 person i adminpanelen, precis som i CSV-exporten.
+- OSA: första namnraden förifylls med gästens namn. Både ”Ja” och ”Tyvärr nej” kan innehålla flera personer och kräver namn på varje rad; extra rader tas bort med ✕. Svaret gäller hela sällskapet. Matpreferenser är frivilliga vid ja och döljs/rensas när nej väljs; namnen behålls vid byte av svar. Admin räknar avböjande personer separat och CSV visar en rad per person utan matpreferenser vid nej. Äldre svar utan namnrader räknas som kontaktpersonen. Publicera uppdaterad `exportGuests` före webbappen för korrekt export av nej-sällskap.
 - Nedräkningen räknar mot 5 juni 2027 kl. 14.00 svensk tid, visar ”Det är idag!” resten av dagen och därefter ett tack.
 - Det finns en enda service worker, [public/sw.js](./public/sw.js), som även laddar push-koden från `firebase-messaging-sw.js` (genereras av [vite.config.js](./vite.config.js)). Sidor hämtas från nätet först och cachen används bara offline; filer under `/assets/` har innehållshash och hämtas från cachen först. Registrera inte `firebase-messaging-sw.js` separat – två registreringar på scope `/` ersätter varandra.
 - [firebase.json](./firebase.json) sätter `Cache-Control: no-cache` på allt utom `/assets/**`, som får `immutable` i ett år. Annars kan webbläsaren visa en upp till en timme gammal kopia av en enskild adress (t.ex. `/login`) efter en publicering. Regeln för `/assets/**` måste stå efter `**`.
@@ -167,7 +172,7 @@ Firebase Firestores Node-beroende låser annars gRPC till en äldre minorversion
 ### Acceptanstest efter publicering
 
 1. Två gästkonton → konto A önskar en låt → konto B ser låten och önskarens namn.
-2. Konto B → rösta på låten och ladda om → röstetalet ökar en gång, knappen visar Röstat och rösten kan inte tas bort.
+2. Konto B → rösta på låten och ladda om → röstetalet ökar en gång och knappen visar Röstat; klicka igen och ladda om → den egna rösten tas bort och antalet minskar med ett utan att andras röster påverkas.
 3. Konto B i två flikar → rösta samtidigt på samma nya låt → endast en röst registreras.
 4. Gästkonto → öppna Kontakt → texten är Skicka ett mail till brudparet och länken innehåller båda mottagarna.
 5. Admin med OSA-data → exportera från Gäster och OSA → samma gemensamma CSV-format, en rad per person, korrekta svenska tecken, närvaro och matpreferenser.
@@ -185,6 +190,9 @@ Firebase Firestores Node-beroende låser annars gRPC till en äldre minorversion
 17. DevTools → Offline → ladda om → appen öppnas utan att fastna på laddningsskärmen; slå på nätet → innehållet laddas.
 18. OSA → ”Ja” → lägg till en tom rad → svaret går inte att skicka förrän raden fylls i eller tas bort; admin → OSA → ”Kommer” stämmer med CSV-exporten.
 19. Admin → Notiser → skicka utan att någon gäst slagit på notiser → notisen syns i historiken med ”0 mottog”.
+20. OSA → ”Tyvärr nej” → ange två namn och spara → båda finns kvar när svaret öppnas igen; admin visar två avböjande personer och CSV har två rader med ”Kommer ej”.
+21. OSA → ja med matpreferenser → välj nej och sedan ja → namnen finns kvar men matpreferenserna är tomma; vid nej är matpreferensfälten dolda.
+22. OSA → nej med en tom namnrad → sparande blockeras tills namnet fylls i eller raden tas bort; äldre nej-svar utan namnlista → kontaktpersonens namn förifylls vid redigering.
 
 ## Vite-mallens information
 

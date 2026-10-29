@@ -2,6 +2,18 @@
 
 Utkast baserat på [features.md](./features.md) och [wedding-app-spec.md](./wedding-app-spec.md). Stories och deluppgifter är förslag, inte skapade ärenden i ett ärendehanteringssystem. Beslut som saknas är markerade som frågor.
 
+## Nya önskemål – 26 oktober 2026
+
+Användaren har meddelat att föregående ändringar är publicerade. Detta är inte en separat produktionsverifiering. Önskemålen nedan är dokumenterade, inte implementerade.
+
+| Önskemål | Story | Status |
+|---|---|---|
+| Klädinspiration via länk efter klädkoden | US-14 | Ny; mockup/innehåll behöver bekräftas |
+| Lyssna på Spotify från inkomna låtönskningar | US-15 | Söklänkar implementerade lokalt |
+| Rätta gilla-knappen på inkomna låtönskningar | US-05 | Återöppnad; felsymptom behöver beskrivas |
+| FAQ: ”Hur funkar transport under dagen?” | US-03 | Tillägg; svarstext behöver bekräftas |
+| Svara nej för flera personer i OSA | US-16 | Implementerad lokalt; admin och export uppdaterade |
+
 ## EPIC 1 – Gästkonto och notiser
 
 ### US-01 – Välja och införa en inloggningslösning
@@ -66,6 +78,8 @@ Utkast baserat på [features.md](./features.md) och [wedding-app-spec.md](./wedd
 ## EPIC 2 – Bröllopsinformation och visuell identitet
 
 ### US-03 – Uppdatera praktisk bröllopsinformation
+**Tillägg 2026-10-26:** Godkänd fråga: ”Hur funkar transport under dagen?”. Godkänt tillfälligt svar: ”Information om transport under dagen kommer närmare bröllopet.” Inlagt i lokala standardfrågor före parkering. Befintlig sparad FAQ skrivs inte över; frågan måste läggas till via admin om FAQ redan sparats. Klädinspirationslänken bryts ut i US-14.
+
 **Som gäst vill jag hitta korrekta uppgifter om vigsel, klädsel, adresser och transport, så att jag kan planera min dag.**
 
 **Deluppgifter**
@@ -74,17 +88,43 @@ Utkast baserat på [features.md](./features.md) och [wedding-app-spec.md](./wedd
 - Uppdatera klädkoden till mörk kostym.
 - Lägg in adressen till Rappesta kyrka och komplettera med adressen till ladan när den är bekräftad.
 - Kontrollera att informationen visas bra på mobil.
+- Lägg till ”Hur funkar transport under dagen?” med bekräftat svar i befintlig adminhanterad FAQ; undvik en dubblett om en transportfråga redan finns.
 
 **Acceptanskriterier**
 - FAQ anger att vigseln hålls inomhus och beskriver kvällsbussen.
 - Klädkoden visas som mörk kostym.
 - Publicerade adresser är bekräftade och går att använda för navigering.
 - Okänd adress till ladan publiceras inte som om den vore bekräftad.
+- Den nya transportfrågan visas i beslutad ordning och innehåller endast bekräftade uppgifter.
 
 **Frågor**
 - Är stavningen och namnet på platsen “Rappesta kyrka” korrekt?
 - Vilken tid går bussen, var stannar den och krävs föranmälan? detta kommer uppdateras senare
 - När kommer adressen till ladan och ska den visas även på startsidan? - en månad innan festen
+- Godkänd tillfällig svarstext: ”Information om transport under dagen kommer närmare bröllopet.” Kontrollera eventuell befintlig transportfråga innan en ny läggs till i admin.
+- Var i FAQ-ordningen ska transportfrågan placeras?
+
+### US-14 – Visa klädinspiration från FAQ
+**Status:** Implementerad lokalt med användarens bifogade klädguide som oförändrad bild på `/dress-code`. FAQ-posten `dress-code` får inspirationslänken efter svaret på en ny rad. Bilden kan öppnas i full storlek. Sparade FAQ-svar ändras inte. Lint och bygge passerar. Inte publicerat.
+
+**Som gäst vill jag kunna öppna klädinspiration från klädkoden, så att jag förstår vad ”Mörk kostym” innebär.**
+
+**Deluppgifter**
+- Behåll ”Mörk kostym” och lägg efter den en radbrytning följd av ”Vill du ha mer inspiration, klicka här!”.
+- Gör ordet ”här” till en intern länk till en ny sida för klädinspiration.
+- Ta emot eller ta fram och godkänn mockup samt innehåll/bilder för sidan.
+- Lägg till sidan och säkerställ att FAQ kan visa den namngivna länken och radbrytningen även när svaret sparas via admin.
+- Kontrollera mobilvy, tangentbordsnavigation, direktlänk och återgång till FAQ.
+
+**Acceptanskriterier**
+- Klädkoden följs av den angivna texten på en ny rad.
+- ”här” är klickbart och öppnar den nya inspirationssidan.
+- Sidan följer appens godkända färger och typsnitt och visar godkänt material.
+- Befintliga FAQ-svar och vanliga webblänkar fortsätter fungera.
+
+**Frågor**
+- Finns en färdig mockup som ska bifogas, eller ska ett förslag tas fram för godkännande?
+- Vilka texter och bilder ska inspirationssidan innehålla?
 
 ### US-04 – Uppdatera typsnitt och logotyp
 **Status:** Startsidan har implementerats lokalt med två större diagonala blomsterhörn. Senaste val efter fem designförslag: linnebeige bakgrund och informationskort från förslag 1, nedräkning från förslag 3 (tunna Jost-siffror mellan linjer, utan platta). Jost används för appens text och Pinyon Script för startsidans namn. Befintliga navigeringsikoner behålls. Separat logotyp återstår.
@@ -112,6 +152,10 @@ Utkast baserat på [features.md](./features.md) och [wedding-app-spec.md](./wedd
 ### US-05 – Förtydliga musikönskemål och röstning
 **Status:** Implementerad lokalt. Serverfunktion `voteForWish` behöver publiceras tillsammans med webbappen. Automatiska backendtester finns; verifiering mot produktions-Firebase återstår.
 
+**Återöppnad 2026-10-26:** Användaren rapporterar att gilla-knappen inte går att trycka på för en låt som någon annan har önskat. Tidigare implementation räknas inte som verifierad lösning på det nya felet. Orsaken är inte utredd.
+
+**Nytt beslut 2026-10-26:** Användaren bekräftar att knappen fungerar nu. Ta bort hjälptexten och den gröna röstbekräftelsen. Ett nytt klick på markerat hjärta ska ta bort den egna rösten. Detta ersätter tidigare beslut om permanenta röster. Implementerat lokalt; uppdaterad `voteForWish` måste publiceras före webbappen.
+
 **Som gäst vill jag se vem som önskat en låt och kunna rösta på önskemål, så att jag enkelt kan delta och se vilka låtar andra gillar.**
 
 **Deluppgifter**
@@ -119,6 +163,8 @@ Utkast baserat på [features.md](./features.md) och [wedding-app-spec.md](./wedd
 - Förbättra kontrasten för namnet på gästen som önskat låten.
 - Undersök och rätta gilla-/röstknappen så att den ger tydlig återkoppling.
 - Säkerställ att samma gäst inte kan rösta flera gånger på samma låt.
+- Återskapa det rapporterade felet på inkomna önskningar; kontrollera knappstatus, callable-anrop, felåterkoppling och sparat röstetal innan orsaken fastställs.
+- Rätta orsaken och verifiera med två olika gästkonton samt efter omladdning.
 
 **Acceptanskriterier**
 - Platshållaren visar artist och låttitel på ett begripligt sätt.
@@ -127,8 +173,59 @@ Utkast baserat på [features.md](./features.md) och [wedding-app-spec.md](./wedd
 - Gästen ser om den egna rösten är registrerad.
 
 **Frågor**
-- Ska gästen kunna ta bort eller ändra sin röst? - nej
+- Ska gästen kunna ta bort eller ändra sin röst? - Ja, enligt nytt beslut 2026-10-26: klicka på markerat hjärta för att ta bort den egna rösten.
 - Ska låtönskemål och önskarens namn vara synliga för alla inloggade gäster? - ja
+- Bekräftat symptom: knappen går inte att trycka på för någon annans önskning.
+- Gäller felet egna eller andras önskningar, och vilken enhet/webbläsare används? Nuvarande avsikt är att inte rösta på sin egen önskning.
+
+### US-15 – Lyssna på låtönskningar på Spotify
+**Status:** Söklänkar implementerade lokalt efter beslut 2026-10-26. ”Sök på Spotify” visas i gästlistan och adminlistan för musikönskningar. Länken söker på låttitel och eventuell artist, öppnas i ny flik och kräver ingen API-integration eller datamigrering. URL-kodning och saknad artist har verifierats i webbläsaren; lint och bygge passerar. Inte publicerat.
+
+**Som gäst vill jag kunna öppna Spotify från en inkommen låtönskning, så att jag kan lyssna på låten.**
+
+**Deluppgifter**
+- Bestäm om länken ska gå till en Spotify-sökning på låt/artist eller en exakt låt med sparad Spotify-URL.
+- Visa ”Lyssna på Spotify” som länk under varje inkommen låtönskning.
+- Hantera äldre önskningar, saknad artist och eventuell saknad låtlänk enligt beslutad modell.
+- Kontrollera URL-kodning av specialtecken och mobil-/datorbeteende utan att störa röstknappen.
+
+**Acceptanskriterier**
+- Inkomna önskningar har en tydlig Spotify-länk enligt beslutad länkmodell.
+- Länken går till önskad låt eller tydligt till en sökning på låt/artist; ingen obekräftad träff presenteras som exakt låt.
+- Befintliga önskningar hanteras utan att försvinna eller kräva att de skapas om.
+- Röstning och dess återkoppling fungerar oberoende av Spotify-länken.
+
+**Frågor**
+- Räcker en Spotify-sökning med låttitel och artist, eller ska länken gå direkt till exakt låt?
+- Om exakt låt krävs: ska gästen ange Spotify-länk när önskningen skapas, eller ska admin komplettera den?
+- Avser ”inkomna önskningar” gästernas lista, adminlistan eller båda?
+
+## EPIC 8 – OSA för sällskap
+
+### US-16 – Tacka nej för flera personer
+**Status:** Implementerad lokalt. Namn krävs även vid nej; matpreferenser döljs och rensas vid nej. Admin räknar/visar avböjande personer och exporten innehåller en rad per person. 26 backendtester passerar; OSA-formuläret har verifierats i webbläsaren med simulerad databas. Publicera uppdaterad `exportGuests` före webbappen.
+
+**Som gäst vill jag kunna tacka nej för flera namngivna personer i samma OSA, så att hela sällskapets svar registreras utan separata konton.**
+
+**Deluppgifter**
+- Visa namnlista samt lägg till/ta bort person även när ”Tyvärr nej” är valt.
+- Anpassa validering och sparande så att samtliga avböjande personers namn bevaras.
+- Bestäm hantering av matpreferenser och befintliga namn när man växlar mellan ja och nej.
+- Visa avböjande personer korrekt i adminlistan utan att räkna dem som deltagare.
+- Säkerställ att CSV-exporten innehåller en rad per namngiven avböjande person med korrekt närvarostatus.
+- Bevara stöd för äldre nej-svar som saknar personlista och testa redigering efter omladdning.
+
+**Acceptanskriterier**
+- ”Tyvärr nej” kan sparas för flera personer i samma svar.
+- Namn och nej-status finns kvar efter omladdning och visas korrekt i admin och export.
+- Avböjande personer ökar inte antalet deltagare.
+- Befintligt ja-flöde och äldre OSA-svar fortsätter fungera.
+- Byte mellan ja och nej tappar inte namn oavsiktligt.
+
+**Frågor**
+- Bekräftat: varje avböjande persons namn är obligatoriskt, precis som vid ja.
+- Bekräftat: matpreferenser döljs och rensas vid nej; de återställs inte när gästen byter tillbaka till ja.
+- Befintligt beteende behålls: ett svar gäller hela sällskapet. Blandade ja-/nej-svar ingår inte i denna story.
 
 ## EPIC 4 – Bildgalleri
 

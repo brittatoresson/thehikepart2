@@ -15,10 +15,10 @@ function buildGuestCsv(users, rsvps) {
     const rsvp = rsvps.get(user.id)
     const status = rsvp?.attending === true ? 'Kommer'
       : rsvp?.attending === false ? 'Kommer ej' : 'Ej svarat'
-    const guests = rsvp?.attending === true && rsvp.guests?.length
+    const guests = (rsvp?.attending === true || rsvp?.attending === false) && rsvp.guests?.length
       ? rsvp.guests : [{ name: user.displayName, dietary: '' }]
     for (const guest of guests) {
-      rows.push([guest.name, user.email, status, guest.dietary, user.displayName])
+      rows.push([guest.name, user.email, status, rsvp?.attending === true ? guest.dietary : '', user.displayName])
     }
   }
   return '\uFEFF' + rows.map(row => row.map(csvCell).join(';')).join('\r\n') + '\r\n'

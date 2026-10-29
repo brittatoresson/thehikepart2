@@ -344,6 +344,19 @@ h1, h2, h3, h4 {
   transform: rotate(45deg);
 }
 
+.dress-code-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 1rem;
+}
+
+.dress-code-help {
+  margin-top: 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .faq-answer a {
   color: var(--sage-dark);
   text-decoration: underline;
@@ -552,6 +565,16 @@ h1, h2, h3, h4 {
 
 .admin-export {
   margin-bottom: 1.5rem;
+}
+
+.spotify-search-link {
+  display: inline-block;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0;
+  color: var(--sage-dark);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
 }
 
 .vote-status {

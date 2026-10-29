@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home'
 import FAQ from './pages/FAQ'
+import DressCode from './pages/DressCode'
 import MusicWishes from './pages/MusicWishes'
 import PhotoGallery from './pages/PhotoGallery'
 import Contact from './pages/Contact'
@@ -23,6 +24,7 @@ export default function App() {
             <Route element={<AppShell />}>
               <Route path="/" element={<Home />} />
               <Route path="/faq" element={<FAQ />} />
+              <Route path="/dress-code" element={<DressCode />} />
               <Route path="/music" element={<MusicWishes />} />
               <Route path="/gallery" element={<PhotoGallery />} />
               <Route path="/contact" element={<Contact />} />

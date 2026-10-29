@@ -3,6 +3,7 @@ import { httpsCallable } from 'firebase/functions'
 import { functions } from '../firebase'
 import defaultFaqs from '../../functions/faq-defaults.json'
 import FaqAnswer from '../components/FaqAnswer'
+import { Link } from 'react-router-dom'
 
 export default function FAQ() {
   const [faqs, setFaqs] = useState(defaultFaqs)
@@ -46,7 +47,15 @@ export default function FAQ() {
         {faqs.map(({ id, q, a }) => (
           <details className="faq-item" key={id}>
             <summary>{q}</summary>
-            <p className="faq-answer"><FaqAnswer text={a} /></p>
+            <p className="faq-answer">
+              <FaqAnswer text={a} />
+              {id === 'dress-code' && (
+                <>
+                  <br />
+                  Vill du ha mer inspiration, klicka <Link to="/dress-code">här</Link>!
+                </>
+              )}
+            </p>
           </details>
         ))}
       </div>
