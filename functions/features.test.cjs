@@ -250,7 +250,6 @@ test('FAQ rejects admin writes from unauthenticated users and guests', async t =
 
 test('FAQ saves a validated full list atomically and rejects stale admin versions', async t => {
   const db = getFirestore()
-  const adminRef = {}
   const faqRef = {}
   const items = [{ id: 'new', q: 'Ny fråga?', a: 'Nytt svar.' }]
   let currentVersion = 0
@@ -452,4 +451,36 @@ test('push is sent to stored tokens and the result is logged', async t => {
   assert.equal(fixture.logged[0].successCount, 2)
   assert.equal(fixture.logged[0].sentBy, 'Britta')
   assert.equal(fixture.wasDeleted(), true)
+})
+
+test('push deduplicates tokens and splits more than 500 recipients into batches', async t => {
+  const users = Array.from({ length: 501 }, (_, index) => ({ fcmToken: `token-${index}` }))
+  const fixture = createPushFixture(t, [...users, users[0], {}])
+  await sendPushNotification.run(fixture.event)
+  assert.equal(fixture.send.mock.callCount(), 2)
+  assert.equal(fixture.send.mock.calls[0].arguments[0].tokens.length, 500)
+  assert.deepEqual(fixture.send.mock.calls[1].arguments[0].tokens, ['token-500'])
+  assert.equal(fixture.logged[0].successCount, 501)
+  assert.equal(fixture.logged[0].failureCount, 0)
+  assert.equal(fixture.wasDeleted(), true)
+})
+
+test('push aggregates delivery failures across batches', async t => {
+  const fixture = createPushFixture(t, Array.from({ length: 501 }, (_, index) => ({ fcmToken: `token-${index}` })))
+  fixture.send.mock.mockImplementation(async ({ tokens }) => ({
+    successCount: tokens.length - 1,
+    failureCount: 1,
+  }))
+  await sendPushNotification.run(fixture.event)
+  assert.equal(fixture.logged[0].successCount, 499)
+  assert.equal(fixture.logged[0].failureCount, 2)
+})
+
+test('FAQ defaults include confirmed dress code, indoor ceremony and evening bus', () => {
+  const byId = Object.fromEntries(defaultFaqs.map(item => [item.id, item]))
+  assert.equal(byId['dress-code'].a, 'Mörk kostym')
+  assert.match(byId.ceremony.a, /Vigseln hålls inomhus/)
+  assert.match(byId['evening-bus'].a, /festlokalen till Linköpings centrum/)
+  assert.equal(byId.transport.q, 'Hur funkar transport under dagen?')
+  assert.deepEqual(normalizeFaqs(defaultFaqs), defaultFaqs)
 })

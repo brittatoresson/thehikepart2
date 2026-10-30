@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import AuthHeader from '../components/AuthHeader'
 
 const ERROR_MESSAGES = {
@@ -69,7 +69,7 @@ export default function Login() {
           </button>
         </form>
         <p className="auth-switch">
-          Ny gäst? <Link to="/register">Registrera dig här</Link>
+          Ny gäst? <Link to="/register" state={location.state}>Registrera dig här</Link>
         </p>
       </div>
     </div>

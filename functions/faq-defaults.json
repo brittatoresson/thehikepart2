@@ -7,7 +7,7 @@
   {
     "id": "dress-code",
     "q": "Vad är klädkoden?",
-    "a": "Vi önskar festlig klädsel. Gärna något som passar för en sommardag utomhus. Vi ber er undvika helvitt."
+    "a": "Mörk kostym"
   },
   {
     "id": "children",
@@ -32,12 +32,17 @@
   {
     "id": "ceremony",
     "q": "Är ceremonin inomhus eller utomhus?",
-    "a": "Vigseln planeras utomhus och middagen inomhus. Ha gärna med ett extra lager för kvällen!"
+    "a": "Vigseln hålls inomhus. Ha gärna med ett extra lager för kvällen!"
   },
   {
     "id": "transport",
     "q": "Hur funkar transport under dagen?",
     "a": "Information om transport under dagen kommer närmare bröllopet."
+  },
+  {
+    "id": "evening-bus",
+    "q": "Finns det transport hem på kvällen?",
+    "a": "Det kommer att finnas en buss från festlokalen till Linköpings centrum på kvällen. Mer information om tider och hållplatser kommer senare."
   },
   {
     "id": "parking",

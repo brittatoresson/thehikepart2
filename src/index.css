@@ -545,6 +545,13 @@ h1, h2, h3, h4 {
   margin-top: 0.2rem;
 }
 
+.faq-admin-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
 .music-item-by {
   font-size: 0.72rem;
   color: var(--text);

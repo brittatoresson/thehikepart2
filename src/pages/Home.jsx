@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import heroTopLeft from '../assets/botanical/hero_top_left.png'
 import heroBottomRight from '../assets/botanical/hero_bottom_right.png'
 
@@ -256,8 +256,24 @@ function RsvpModal({ onClose }) {
 }
 
 export default function Home() {
+  const { userProfile, logout } = useAuth()
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [logoutError, setLogoutError] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
   const showRsvp = searchParams.get('osa') === '1'
+
+  async function handleLogout() {
+    setLoggingOut(true)
+    setLogoutError('')
+    try {
+      await logout()
+    } catch (error) {
+      console.error('Kunde inte logga ut', error)
+      setLogoutError('Du kunde inte loggas ut. Försök igen.')
+    } finally {
+      setLoggingOut(false)
+    }
+  }
 
   function setShowRsvp(open) {
     setSearchParams(current => {
@@ -308,6 +324,16 @@ export default function Home() {
         </button>
       </div>
 
+      <div className="contact-account">
+        <div className="contact-account-info">
+          <span className="contact-account-label">Inloggad som</span>
+          <span className="contact-account-name">{userProfile?.displayName ?? 'Gäst'}</span>
+        </div>
+        <button className="btn-logout" onClick={handleLogout} disabled={loggingOut}>
+          {loggingOut ? 'Loggar ut…' : 'Logga ut'}
+        </button>
+      </div>
+      {logoutError && <p className="auth-error" role="alert">{logoutError}</p>}
       {showRsvp && <RsvpModal onClose={() => setShowRsvp(false)} />}
     </div>
   )

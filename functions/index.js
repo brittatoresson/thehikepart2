@@ -142,19 +142,21 @@ exports.sendPushNotification = onDocumentCreated(
     const db = getFirestore()
 
     const usersSnap = await db.collection('users').get()
-    const tokens = usersSnap.docs.map(d => d.data().fcmToken).filter(Boolean)
+    const tokens = [...new Set(usersSnap.docs.map(d => d.data().fcmToken).filter(Boolean))]
     console.log(`Users: ${usersSnap.size}, tokens found: ${tokens.length}`)
 
     let successCount = 0
     let failureCount = 0
     if (tokens.length > 0) {
-      const response = await getMessaging().sendEachForMulticast({
-        tokens,
-        notification: { title, body },
-        webpush: { notification: { icon: '/favicon.svg' } },
-      })
-      successCount = response.successCount
-      failureCount = response.failureCount
+      for (let offset = 0; offset < tokens.length; offset += 500) {
+        const response = await getMessaging().sendEachForMulticast({
+          tokens: tokens.slice(offset, offset + 500),
+          notification: { title, body },
+          webpush: { notification: { icon: '/favicon.svg' } },
+        })
+        successCount += response.successCount
+        failureCount += response.failureCount
+      }
       console.log(`FCM sent: success=${successCount} fail=${failureCount}`)
     }
 

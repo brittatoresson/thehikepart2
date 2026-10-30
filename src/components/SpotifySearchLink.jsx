@@ -7,9 +7,9 @@ export default function SpotifySearchLink({ song, artist }) {
       href={`https://open.spotify.com/search/results/${encodeURIComponent(search)}`}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`Sök efter ${search} på Spotify (öppnas i ny flik)`}
+      aria-label={`Lyssna på Spotify: sök efter ${search} (öppnas i ny flik)`}
     >
-      Sök på Spotify
+      Lyssna på Spotify
     </a>
   )
 }

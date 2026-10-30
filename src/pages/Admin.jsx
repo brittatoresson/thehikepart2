@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import SpotifySearchLink from '../components/SpotifySearchLink'
 import {
-  collection, onSnapshot, query, orderBy,
+  collection,
   deleteDoc, updateDoc, doc, addDoc, serverTimestamp,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '../firebase'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
+import { useLiveCollection } from '../hooks/useLiveCollection'
 
 function ConfirmDialog({ message, onConfirm, onCancel }) {
   return (
@@ -73,14 +74,10 @@ function GuestExport() {
 }
 
 function GuestsTab() {
-  const [guests, setGuests] = useState([])
+  const { items: guests, loading, error } = useLiveCollection('users', 'createdAt')
 
-  useEffect(() => {
-    const q = query(collection(db, 'users'), orderBy('createdAt', 'asc'))
-    return onSnapshot(q, snap => {
-      setGuests(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
-  }, [])
+  if (loading) return <p role="status">Hämtar gäster…</p>
+  if (error) return <p className="auth-error" role="alert">{error}</p>
 
   return (
     <div>
@@ -106,23 +103,15 @@ function GuestsTab() {
 }
 
 function OsaTab() {
-  const [users, setUsers] = useState([])
-  const [rsvps, setRsvps] = useState({})
+  const usersState = useLiveCollection('users', 'createdAt')
+  const rsvpsState = useLiveCollection('rsvps')
+  const users = usersState.items
+  const rsvps = Object.fromEntries(rsvpsState.items.map(item => [item.id, item]))
 
-  useEffect(() => {
-    const q = query(collection(db, 'users'), orderBy('createdAt', 'asc'))
-    return onSnapshot(q, snap => {
-      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
-  }, [])
-
-  useEffect(() => {
-    return onSnapshot(collection(db, 'rsvps'), snap => {
-      const map = {}
-      snap.docs.forEach(d => { map[d.id] = d.data() })
-      setRsvps(map)
-    })
-  }, [])
+  if (usersState.loading || rsvpsState.loading) return <p role="status">Hämtar OSA…</p>
+  if (usersState.error || rsvpsState.error) {
+    return <p className="auth-error" role="alert">{usersState.error || rsvpsState.error}</p>
+  }
 
   const attendingGuestCount = Object.values(rsvps)
     .filter(r => r.attending === true)
@@ -212,16 +201,9 @@ function OsaTab() {
 }
 
 function MusicTab() {
-  const [wishes, setWishes] = useState([])
+  const { items: wishes, loading, error: loadError } = useLiveCollection('wishes', 'voteCount', 'desc')
   const [confirm, setConfirm] = useState(null)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    const q = query(collection(db, 'wishes'), orderBy('voteCount', 'desc'))
-    return onSnapshot(q, snap => {
-      setWishes(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
-  }, [])
 
   async function setStatus(id, status) {
     setError('')
@@ -259,8 +241,10 @@ function MusicTab() {
         />
       )}
       {error && <p className="auth-error" role="alert">{error}</p>}
+      {loadError && <p className="auth-error" role="alert">{loadError}</p>}
+      {loading && <p role="status">Hämtar önskningar…</p>}
       <div className="admin-list">
-        {wishes.length === 0 && (
+        {!loading && !loadError && wishes.length === 0 && (
           <p className="admin-empty">Inga önskningar ännu.</p>
         )}
         {wishes.map(w => (
@@ -304,18 +288,11 @@ function MusicTab() {
 }
 
 function PhotosTab() {
-  const [photos, setPhotos] = useState([])
+  const { items: photos, loading, error: loadError } = useLiveCollection('photos', 'createdAt', 'desc')
   const [deleting, setDeleting] = useState(null)
   const [confirm, setConfirm] = useState(null)
   const [deleteError, setDeleteError] = useState('')
   const [deleteSuccess, setDeleteSuccess] = useState('')
-
-  useEffect(() => {
-    const q = query(collection(db, 'photos'), orderBy('createdAt', 'desc'))
-    return onSnapshot(q, snap => {
-      setPhotos(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
-  }, [])
 
   function deletePhoto(photo) {
     setConfirm({
@@ -349,10 +326,12 @@ function PhotosTab() {
       )}
       <div>
         <p className="admin-count">{photos.length} bilder</p>
+        {loading && <p role="status">Hämtar bilder…</p>}
+        {loadError && <p className="auth-error" role="alert">{loadError}</p>}
         {deleteError && <p className="auth-error" role="alert">{deleteError}</p>}
         {deleteSuccess && <p className="music-success" role="status">{deleteSuccess}</p>}
         <div className="admin-photo-grid">
-          {photos.length === 0 && (
+          {!loading && !loadError && photos.length === 0 && (
             <p className="admin-empty">Inga bilder ännu.</p>
           )}
           {photos.map(photo => (
@@ -379,19 +358,18 @@ function PushTab() {
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState(null)
-  const [history, setHistory] = useState([])
-
-  useEffect(() => {
-    const q = query(collection(db, 'notifications'), orderBy('sentAt', 'desc'))
-    return onSnapshot(q, snap => {
-      setHistory(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
-  }, [])
+  const [sendError, setSendError] = useState('')
+  const { items: history, loading, error: loadError } = useLiveCollection('notifications', 'sentAt', 'desc')
 
   async function handleSend(e) {
     e.preventDefault()
+    if (!title.trim() || !body.trim()) {
+      setSendError('Fyll i både rubrik och meddelande.')
+      return
+    }
     setSending(true)
     setResult(null)
+    setSendError('')
     try {
       await addDoc(collection(db, 'notification_queue'), {
         title: title.trim(),
@@ -403,7 +381,8 @@ function PushTab() {
       setTitle('')
       setBody('')
     } catch (err) {
-      setResult(`Fel: ${err.message}`)
+      console.error('Kunde inte köa notisen', err)
+      setSendError('Notisen kunde inte skickas. Kontrollera anslutningen och försök igen.')
     } finally {
       setSending(false)
     }
@@ -412,7 +391,8 @@ function PushTab() {
   return (
     <div>
       <div className="music-form">
-        {result && <p className="music-success">{result}</p>}
+        {result && <p className="music-success" role="status">{result}</p>}
+        {sendError && <p className="auth-error" role="alert">{sendError}</p>}
         <form onSubmit={handleSend}>
           <div className="form-group">
             <label htmlFor="push-title">Rubrik</label>
@@ -444,6 +424,8 @@ function PushTab() {
         </form>
       </div>
 
+      {loading && <p role="status">Hämtar notishistorik…</p>}
+      {loadError && <p className="auth-error" role="alert">{loadError}</p>}
       {history.length > 0 && (
         <>
           <h2 className="music-list-title">
@@ -580,6 +562,7 @@ function FaqTab() {
       )}
       {success && <p className="music-success" role="status">{success}</p>}
 
+      <fieldset disabled={saving} className="faq-admin-fields" aria-label="Redigera FAQ">
       <div className="faq-admin-list">
         {items.map((item, index) => (
           <section className="faq-admin-item" key={item.id} aria-label={`FAQ ${index + 1}`}>
@@ -616,6 +599,7 @@ function FaqTab() {
         </div>
         <button type="submit" className="btn-primary">Lägg till i listan</button>
       </form>
+      </fieldset>
 
       <button type="button" className={`btn-primary faq-admin-save${success && !isDirty && !saving ? ' is-saved' : ''}`} onClick={save} disabled={!isDirty || saving || items.some(item => !item.q.trim() || !item.a.trim())}>
         {saving ? 'Sparar…' : 'Spara FAQ'}

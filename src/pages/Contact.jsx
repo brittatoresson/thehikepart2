@@ -1,5 +1,4 @@
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 
 const COUPLE_EMAIL = 'britta.toresson@gmail.com,johanna.norell@live.com'
 const TOASTMASTER_EMAIL = 'toastmaster@june5th.se' // TODO: uppdatera med rätt adress
@@ -21,13 +20,7 @@ const MicIcon = () => (
 )
 
 export default function Contact() {
-  const { userProfile, logout } = useAuth()
-  const navigate = useNavigate()
-
-  async function handleLogout() {
-    await logout()
-    navigate('/login')
-  }
+  const { userProfile } = useAuth()
 
   const guestName = encodeURIComponent(userProfile?.displayName ?? 'Gäst')
   const coupleMailto = `mailto:${COUPLE_EMAIL}?subject=Fr%C3%A5ga%20fr%C3%A5n%20g%C3%A4st`
@@ -63,15 +56,6 @@ export default function Contact() {
         </a>
       </div>
 
-      <div className="contact-account">
-        <div className="contact-account-info">
-          <span className="contact-account-label">Inloggad som</span>
-          <span className="contact-account-name">{userProfile?.displayName ?? 'Gäst'}</span>
-        </div>
-        <button className="btn-logout" onClick={handleLogout}>
-          Logga ut
-        </button>
-      </div>
     </div>
   )
 }

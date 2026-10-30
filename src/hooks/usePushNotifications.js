@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getToken, onMessage } from 'firebase/messaging'
 import { doc, updateDoc } from 'firebase/firestore'
 import { messaging, db } from '../firebase'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 
 export function usePushNotifications() {
   const { currentUser } = useAuth()
   const [permissionState, setPermissionState] = useState(
-    () => ('Notification' in window ? Notification.permission : 'denied')
+    () => ('Notification' in window && messaging ? Notification.permission : 'denied')
   )
   const [toast, setToast] = useState(null)
+  const [error, setError] = useState('')
+  const clearToast = useCallback(() => setToast(null), [])
 
   useEffect(() => {
     if (!currentUser || !messaging || permissionState !== 'granted') return
@@ -26,9 +28,13 @@ export function usePushNotifications() {
         })
         if (token) {
           await updateDoc(doc(db, 'users', currentUser.uid), { fcmToken: token })
+          setError('')
+        } else {
+          setError('Notiser kunde inte aktiveras. Försök igen genom att ladda om sidan.')
         }
       } catch (err) {
         console.warn('Push setup:', err.message)
+        setError('Notiser kunde inte aktiveras. Kontrollera anslutningen och ladda om sidan.')
       }
     }
 
@@ -44,14 +50,21 @@ export function usePushNotifications() {
   }, [currentUser, permissionState])
 
   async function requestPermission() {
-    if (!('Notification' in window) || !messaging) return
+    if (!('Notification' in window) || !messaging) {
+      setError('Notiser stöds inte i den här webbläsaren.')
+      return false
+    }
     try {
       const result = await Notification.requestPermission()
       setPermissionState(result)
+      setError('')
+      return result !== 'default'
     } catch (err) {
       console.warn('Permission request:', err.message)
+      setError('Notisbehörigheten kunde inte ändras. Försök igen.')
+      return false
     }
   }
 
-  return { permissionState, requestPermission, toast, clearToast: () => setToast(null) }
+  return { permissionState, requestPermission, toast, clearToast, error }
 }

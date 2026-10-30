@@ -4,15 +4,39 @@ Utkast baserat på [features.md](./features.md) och [wedding-app-spec.md](./wedd
 
 ## Nya önskemål – 26 oktober 2026
 
-Användaren har meddelat att föregående ändringar är publicerade. Detta är inte en separat produktionsverifiering. Önskemålen nedan är dokumenterade, inte implementerade.
+Status uppdaterad 2026-10-29 mot lokal kod. Implementerat betyder inte publicerat eller verifierat i produktion. Se även [features.md](./features.md).
 
 | Önskemål | Story | Status |
 |---|---|---|
-| Klädinspiration via länk efter klädkoden | US-14 | Ny; mockup/innehåll behöver bekräftas |
-| Lyssna på Spotify från inkomna låtönskningar | US-15 | Söklänkar implementerade lokalt |
-| Rätta gilla-knappen på inkomna låtönskningar | US-05 | Återöppnad; felsymptom behöver beskrivas |
-| FAQ: ”Hur funkar transport under dagen?” | US-03 | Tillägg; svarstext behöver bekräftas |
+| Klädinspiration via länk efter klädkoden | US-14 | Implementerad lokalt med klädguiden |
+| Lyssna på Spotify från inkomna låtönskningar | US-15 | Implementerad lokalt med önskad länktext och Spotify-sökning |
+| Rätta gilla-knappen på inkomna låtönskningar | US-05 | Implementerad lokalt; backendtester godkända |
+| FAQ: ”Hur funkar transport under dagen?” | US-03 | Implementerad i standardfrågor med godkänt tillfälligt svar |
 | Svara nej för flera personer i OSA | US-16 | Implementerad lokalt; admin och export uppdaterade |
+
+## Repogenomgång – 29 oktober 2026
+
+Genomgången omfattar klientflöden, aktiv Firebase-backend, den äldre backendmallen, regler, service worker, konfiguration och tester. Detta är inte en produktionsverifiering eller garanti att alla buggar är hittade.
+
+**Åtgärdat**
+- Lint använder rätt miljö för React, Node/CommonJS, tester och service worker. Auth-hooken är separerad från komponentexporten.
+- Gemensam listhämtning i admin/galleri visar laddning och fel i stället för att tolka nekad hämtning som tomma listor.
+- FAQ-redigering är låst under sparande, så att anropssvaret inte skriver över ändringar gjorda under väntetiden.
+- Push-utskick deduplicerar tokens och delas i grupper om högst 500. Den extra bakgrundsnotisen har tagits bort eftersom FCM automatiskt visar notification-payloads.
+- Cacheutrymmesfel blockerar inte lyckade nätverkssvar; cacherensning begränsas till appens egna äldre cacheversioner.
+- Registrering hanterar saknad inbjudningskonfiguration och tomt namn. OSA-direktlänk följer med via länkarna mellan inloggning och registrering.
+- Bildval valideras före uppladdning mot befintlig Storage-gräns.
+
+**Återstående, prioriterat**
+1. Före publicering: kör [regeltesterna](./tests/firebase-rules.test.mjs). Försöket är blockerat av saknad Java. Verifiera därefter riktiga gäst-/adminflöden och uppdatera befintlig sparad FAQ separat.
+2. Bekräfta toastmasteradressen i [Kontakt](./src/pages/Contact.jsx); den är fortfarande en TODO. Kyrkadress, logga och eventuellt exakt inbjudningstypsnitt kräver också underlag.
+3. Besluta om serverstyrd inbjudningskontroll. [Registrering](./src/pages/Register.jsx) kontrollerar i dag inbjudningskoden i klienten, inte som en serververifierad inbjudan.
+4. Förbättra profilfel och dialogtillgänglighet: synlig återhämtning vid saknad/oläsbar profil, fokusfälla, Escape och återställning av fokus.
+5. Förbättra pushlivscykeln: utgångna tokens, flera enheter per konto och återupptagning efter delvis misslyckade utskick. Dagens profil lagrar en token per konto.
+6. Prestanda: huvudbundlen är cirka 943 kB före gzip och klädguiden cirka 1,26 MB. Dela kod per sida och optimera bilder utan att försämra läsbarheten.
+7. Förvaltning: bekräfta om den oanvända mallen [june5thdb](./june5thdb) kan tas bort och lägg till automatiska kontroller i GitHub innan fortsatt publicering.
+
+**Verifierat lokalt:** lint utan fel/varningar; 29 backendtester och 4 service worker-tester godkända; bygge lyckas med storleksvarning. Mobil-UI med simulerad Firebase kontrollerar nya texter, inspirationsbild, OSA-nej för två personer, utloggning, låst FAQ-sparande och fel i samtliga adminlistor/galleri. Push på riktiga enheter och produktionsregler är inte verifierade.
 
 ## EPIC 1 – Gästkonto och notiser
 
@@ -78,6 +102,8 @@ Användaren har meddelat att föregående ändringar är publicerade. Detta är 
 ## EPIC 2 – Bröllopsinformation och visuell identitet
 
 ### US-03 – Uppdatera praktisk bröllopsinformation
+**Status 2026-10-29:** Standardfrågorna anger mörk kostym, inomhusvigsel och kvällsbuss till Linköpings centrum. Bekräftad kyrkadress och adress till ladan återstår. Befintligt adminsparat innehåll skrivs inte över och måste uppdateras separat.
+
 **Tillägg 2026-10-26:** Godkänd fråga: ”Hur funkar transport under dagen?”. Godkänt tillfälligt svar: ”Information om transport under dagen kommer närmare bröllopet.” Inlagt i lokala standardfrågor före parkering. Befintlig sparad FAQ skrivs inte över; frågan måste läggas till via admin om FAQ redan sparats. Klädinspirationslänken bryts ut i US-14.
 
 **Som gäst vill jag hitta korrekta uppgifter om vigsel, klädsel, adresser och transport, så att jag kan planera min dag.**
@@ -105,7 +131,7 @@ Användaren har meddelat att föregående ändringar är publicerade. Detta är 
 - Var i FAQ-ordningen ska transportfrågan placeras?
 
 ### US-14 – Visa klädinspiration från FAQ
-**Status:** Implementerad lokalt med användarens bifogade klädguide som oförändrad bild på `/dress-code`. FAQ-posten `dress-code` får inspirationslänken efter svaret på en ny rad. Bilden kan öppnas i full storlek. Sparade FAQ-svar ändras inte. Lint och bygge passerar. Inte publicerat.
+**Status:** Implementerad lokalt med användarens bifogade klädguide som oförändrad bild på `/dress-code`. FAQ-posten `dress-code` får inspirationslänken efter svaret på en ny rad. Bilden kan öppnas i full storlek. Sparade FAQ-svar ändras inte. Lint passerar; bygge lyckas med storleksvarning. Mobilvy verifierad med simulerad Firebase. Inte publicerat.
 
 **Som gäst vill jag kunna öppna klädinspiration från klädkoden, så att jag förstår vad ”Mörk kostym” innebär.**
 
@@ -179,7 +205,7 @@ Användaren har meddelat att föregående ändringar är publicerade. Detta är 
 - Gäller felet egna eller andras önskningar, och vilken enhet/webbläsare används? Nuvarande avsikt är att inte rösta på sin egen önskning.
 
 ### US-15 – Lyssna på låtönskningar på Spotify
-**Status:** Söklänkar implementerade lokalt efter beslut 2026-10-26. ”Sök på Spotify” visas i gästlistan och adminlistan för musikönskningar. Länken söker på låttitel och eventuell artist, öppnas i ny flik och kräver ingen API-integration eller datamigrering. URL-kodning och saknad artist har verifierats i webbläsaren; lint och bygge passerar. Inte publicerat.
+**Status:** Söklänkar implementerade lokalt efter beslut 2026-10-26. Länktexten är nu ”Lyssna på Spotify” i gäst- och adminlistan. Tillgänglighetsnamnet förklarar att länken söker på låttitel och eventuell artist i en ny flik. Ingen API-integration eller datamigrering krävs. Lint passerar; bygge lyckas med storleksvarning. Inte publicerat.
 
 **Som gäst vill jag kunna öppna Spotify från en inkommen låtönskning, så att jag kan lyssna på låten.**
 
@@ -323,6 +349,8 @@ Användaren har meddelat att föregående ändringar är publicerade. Detta är 
 - Ska båda brudparets e-postadresser fortsatt vara mottagare? - Ja
 
 ### US-08 – Göra utloggning lätt att hitta
+**Status 2026-10-29:** Flyttad från Kontakt till startsidan. Knappen visar pågående utloggning och felmeddelande vid misslyckande. Omdirigering till inloggning efter utloggning verifierad med simulerad autentisering.
+
 **Som inloggad gäst vill jag hitta utloggning där jag förväntar mig den, så att jag enkelt kan avsluta min session.**
 
 **Deluppgifter**

@@ -36,14 +36,13 @@ function PushToast({ title, body, onClose }) {
 }
 
 export default function AppShell() {
-  const { permissionState, requestPermission, toast, clearToast } = usePushNotifications()
+  const { permissionState, requestPermission, toast, clearToast, error } = usePushNotifications()
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
   const showBanner = permissionState === 'default' && !bannerDismissed
 
   async function handleAllow() {
-    await requestPermission()
-    setBannerDismissed(true)
+    if (await requestPermission()) setBannerDismissed(true)
   }
 
   return (
@@ -58,6 +57,7 @@ export default function AppShell() {
         <PushToast title={toast.title} body={toast.body} onClose={clearToast} />
       )}
       <main className="main-content">
+        {error && <p className="auth-error" role="alert">{error}</p>}
         <Outlet />
       </main>
       <BottomNav />

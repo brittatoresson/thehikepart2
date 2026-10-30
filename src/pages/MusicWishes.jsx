@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '../firebase'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import SpotifySearchLink from '../components/SpotifySearchLink'
 
 export default function MusicWishes() {

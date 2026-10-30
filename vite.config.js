@@ -19,17 +19,8 @@ firebase.initializeApp({
   appId: '${env.VITE_FIREBASE_APP_ID}',
 })
 
-const messaging = firebase.messaging()
-
-messaging.onBackgroundMessage(payload => {
-  const title = payload.notification?.title ?? 'June 5th'
-  const body = payload.notification?.body ?? ''
-  self.registration.showNotification(title, {
-    body,
-    icon: '/favicon.svg',
-    badge: '/favicon.svg',
-  })
-})
+// FCM visar notification-payloads automatiskt i bakgrunden.
+firebase.messaging()
 `
   )
 

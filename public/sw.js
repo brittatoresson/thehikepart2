@@ -1,4 +1,3 @@
-/* global importScripts */
 // Push-hanteringen ligger i samma service worker, eftersom båda behöver scope '/'
 // och en scope bara kan ha en registrering.
 try {
@@ -7,7 +6,7 @@ try {
   console.warn('Push kunde inte startas i service workern', error)
 }
 
-const CACHE_NAME = 'june5th-v2'
+const CACHE_NAME = 'june5th-v3'
 const APP_SHELL = '/index.html'
 const PRECACHE = [APP_SHELL, '/manifest.json']
 
@@ -23,7 +22,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        keys.filter(k => k.startsWith('june5th-') && k !== CACHE_NAME).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   )
@@ -31,11 +30,19 @@ self.addEventListener('activate', event => {
 
 const isLocalDev = ['localhost', '127.0.0.1'].includes(self.location.hostname)
 
+async function storeResponse(cache, key, response) {
+  try {
+    await cache.put(key, response.clone())
+  } catch (error) {
+    console.warn('Svaret kunde inte sparas för offlinebruk', error)
+  }
+}
+
 async function networkFirst(request, cacheKey = request, fetchRequest = request) {
   const cache = await caches.open(CACHE_NAME)
   try {
     const response = await fetch(fetchRequest)
-    if (response.ok) await cache.put(cacheKey, response.clone())
+    if (response.ok) await storeResponse(cache, cacheKey, response)
     return response
   } catch (error) {
     const cached = await cache.match(cacheKey)
@@ -51,7 +58,7 @@ async function cacheFirst(request) {
   const response = await fetch(request)
   if (response.ok) {
     const cache = await caches.open(CACHE_NAME)
-    await cache.put(request, response.clone())
+    await storeResponse(cache, request, response)
   }
   return response
 }

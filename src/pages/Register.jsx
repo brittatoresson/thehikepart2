@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/useAuth'
 import AuthHeader from '../components/AuthHeader'
 
 const ERROR_MESSAGES = {
@@ -12,6 +12,7 @@ const ERROR_MESSAGES = {
 export default function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -22,8 +23,15 @@ export default function Register() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (inviteCode.trim().toLowerCase() !== import.meta.env.VITE_INVITE_CODE.toLowerCase()) {
+    const expectedCode = import.meta.env.VITE_INVITE_CODE
+    if (!expectedCode?.trim()) {
+      return setError('Registreringen är inte konfigurerad. Kontakta brudparet.')
+    }
+    if (inviteCode.trim().toLowerCase() !== expectedCode.trim().toLowerCase()) {
       return setError('Fel inbjudningskod. Kontrollera att du skrivit rätt.')
+    }
+    if (!displayName.trim()) {
+      return setError('Fyll i ditt namn.')
     }
     if (password !== confirm) {
       return setError('Lösenorden matchar inte.')
@@ -32,7 +40,7 @@ export default function Register() {
     setSubmitting(true)
     try {
       await register(email, password, displayName.trim())
-      navigate('/')
+      navigate(location.state?.openOsa ? '/?osa=1' : '/')
     } catch (err) {
       setError(ERROR_MESSAGES[err.code] ?? 'Något gick fel. Försök igen.')
     } finally {
@@ -111,7 +119,7 @@ export default function Register() {
           </button>
         </form>
         <p className="auth-switch">
-          Har du redan ett konto? <Link to="/login">Logga in här</Link>
+          Har du redan ett konto? <Link to="/login" state={location.state}>Logga in här</Link>
         </p>
       </div>
     </div>

@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import {
-  collection, addDoc, onSnapshot,
-  query, orderBy, serverTimestamp,
+  collection, addDoc, serverTimestamp,
 } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { httpsCallable } from 'firebase/functions'
 import { db, storage, functions } from '../firebase'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import UploaderFilter from '../components/UploaderFilter'
+import { useLiveCollection } from '../hooks/useLiveCollection'
 
 const CameraIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -33,7 +33,7 @@ const CloseIcon = () => (
 
 export default function PhotoGallery() {
   const { currentUser, userProfile } = useAuth()
-  const [photos, setPhotos] = useState([])
+  const { items: photos, loading, error: loadError } = useLiveCollection('photos', 'createdAt', 'desc')
   const [selectedUploaders, setSelectedUploaders] = useState([])
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -63,13 +63,6 @@ export default function PhotoGallery() {
   )
 
   useEffect(() => {
-    const q = query(collection(db, 'photos'), orderBy('createdAt', 'desc'))
-    return onSnapshot(q, snap => {
-      setPhotos(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
-  }, [])
-
-  useEffect(() => {
     document.body.style.overflow = fullscreen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [fullscreen])
@@ -78,6 +71,11 @@ export default function PhotoGallery() {
     const input = e.target
     const file = input.files?.[0]
     if (!file || uploadInFlight.current) return
+    if (!file.type.startsWith('image/') || file.size >= 10 * 1024 * 1024) {
+      setUploadError('Välj en bild som är mindre än 10 MiB.')
+      input.value = ''
+      return
+    }
 
     uploadInFlight.current = true
     setUploading(true)
@@ -210,11 +208,13 @@ export default function PhotoGallery() {
         />
       )}
 
-      {photos.length === 0 && !uploading ? (
+      {loading && <p role="status">Hämtar bilder…</p>}
+      {loadError && <p className="auth-error" role="alert">{loadError}</p>}
+      {!loading && !loadError && photos.length === 0 && !uploading ? (
         <p className="gallery-empty">
           Inga bilder ännu — ladda upp det första minnet!
         </p>
-      ) : visiblePhotos.length === 0 && !uploading ? (
+      ) : !loading && !loadError && visiblePhotos.length === 0 && !uploading ? (
         <p className="gallery-empty">Inga bilder från valda uppladdare ännu.</p>
       ) : (
         <div className="gallery-grid">

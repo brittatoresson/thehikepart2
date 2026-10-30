@@ -1,5 +1,21 @@
 # June 5th
 
+## Lokal verifiering
+
+- `npm run lint` kontrollerar klienten, Node/CommonJS-koden, testerna och service workern. Genererade filer ignoreras.
+- `npm test` kör backend- och service worker-tester utan produktionsanslutning. Pushproven omfattar deduplicering, fler än 500 mottagare och summering av leveransfel; offlineproven omfattar cacheutrymmesfel och isolerad cacherensning.
+- `npm run build` skapar produktionsbygget. Huvudbundlen är fortfarande över 500 kB och ger en storleksvarning; koddelning och bildoptimering återstår.
+- `npm run test:rules` kräver Java och Firebase-emulatorerna, se publiceringsavsnittet. Senaste försöket blockerades av saknad Java.
+- Lokala UI-kontroller med simulerad Firebase ersätter inte acceptanstest med riktiga gästkonton efter publicering.
+
+### Kontroll av ändringarna från repogenomgången
+
+1. Inloggad gäst i mobilvy → öppna FAQ och klädkoden → mörk kostym, radbrytning och inspirationslänk visas; bilden ryms på sidan.
+2. Inloggad gäst → öppna musik → ”Lyssna på Spotify” öppnar en sökning på låt och eventuell artist i en ny flik.
+3. Inloggad gäst → öppna Kontakt och sedan Hem → utloggning finns bara på Hem; lyckad utloggning leder till inloggningssidan.
+4. Admin med redigerbar FAQ → ändra en fråga och spara → redigeringsfält och listknappar är låsta under sparandet och aktiveras igen efter svaret.
+5. Simulerat läsfel i adminlistor/galleri → öppna respektive lista → felmeddelande visas, inte ett missvisande tomlistemeddelande.
+
 ## Design
 
 Startsidan använder designkitets två separata blomsterillustrationer från [src/assets/botanical](./src/assets/botanical). Övriga dekorationsförslag i kitet har inte lagts till på undersidorna.
@@ -30,13 +46,14 @@ Startsidan använder designkitets två separata blomsterillustrationer från [sr
 
 Klädinspiration finns på `/dress-code` för inloggade gäster. Den bifogade klädguiden visas oförändrad och kan öppnas i full storlek. FAQ-posten med ID `dress-code` får automatiskt en inspirationslänk på en ny rad efter sitt svar; adminens sparade svar skrivs inte över.
 
-- ”Sök på Spotify” under låtönskningar i gäst- och adminvyn öppnar Spotify-sökning med låttitel och eventuell artist i ny flik. Länken använder `/search/results/<URL-kodad söktext>`, verifierat med ifyllt sökfält och sökträffar i Spotifys webbspelare. Fungerar även för befintliga önskningar utan nya databasfält eller Spotify API. Länken garanterar inte en specifik inspelning.
+- ”Lyssna på Spotify” under låtönskningar i gäst- och adminvyn öppnar Spotify-sökning med låttitel och eventuell artist i ny flik. Tillgänglighetsnamnet förklarar sökbeteendet. Länken använder `/search/results/<URL-kodad söktext>`. Fungerar även för befintliga önskningar utan nya databasfält eller Spotify API. Länken garanterar inte en specifik inspelning.
 
 - Musikröstning använder callable-funktionen `voteForWish` i `europe-west1`. Inloggning krävs. Hjärtat lägger till eller tar bort den egna rösten. Servern tar emot önskat läge (`voted: true/false`), så upprepade anrop inte växlar rösten oavsiktligt. Transaktionen bevarar andras röster och räknar från listan. Egna önskningar kan inte röstas på. Publicera uppdaterad `voteForWish` före webbappen; äldre klienters anrop utan `voted` betyder fortsatt lägg till.
 - Gästlistan exporteras via callable-funktionen `exportGuests` i samma region. Funktionen kontrollerar adminrollen i användarens Firestore-profil innan den hämtar användare och OSA-svar.
 - FAQ läses av inloggade gäster via `getFaqs` och hanteras i adminpanelen via `saveFaqs` i `europe-west1`. Funktionen kontrollerar adminrollen server-side. En versionskontrollerad Firestore-transaktion sparar hela ordningen i `siteContent/faq`; befintliga frågor är startinnehåll tills admin sparar första ändringen.
 - FAQ-frågor och svar kan läggas till, redigeras, tas bort och flyttas upp/ner. Ändringar blir synliga för gäster efter att de sparats.
 - Standardfrågorna innehåller ”Hur funkar transport under dagen?” med svaret ”Information om transport under dagen kommer närmare bröllopet.” Redan sparad FAQ ersätts inte av nya standardfrågor: lägg till frågan via admin och spara om den saknas i den publicerade listan.
+- Standardfrågorna anger också mörk kostym, inomhusvigsel och kvällsbuss från festlokalen till Linköpings centrum utan obekräftade tider/hållplatser. Även dessa ändringar behöver göras via admin om FAQ redan sparats.
 - Webbadresser som börjar med `https://` eller `http://` i FAQ-svar visas som klickbara länkar. Klistra in webbplatsens adress följd av `/?osa=1` för att öppna OSA-dialogen på startsidan; lokalt används `http://localhost:5173/?osa=1`. OSA kräver inloggning precis som startsidan.
 - Bildgalleriet visar alla foton i uppladdningstidsordning (nyaste först) och kan filtreras på uppladdarens stabila användar-ID. Poster utan uppladdar-ID visas fortfarande under “Alla uppladdare”.
 - Uppladdaren kan ta bort sin egen bild med bekräftelse före 7 juni 2027 kl. 00.00 svensk sommartid (2027-06-06 22:00 UTC). Efter stoppdatumet nekar serverfunktionen gästborttagning; admin kan fortfarande radera. Gäst- och adminradering använder callable-funktionen `deletePhoto`, som kontrollerar roll/ägarskap, tar bort Storage-filen och därefter Firestore-posten.
@@ -46,6 +63,8 @@ Klädinspiration finns på `/dress-code` för inloggade gäster. Den bifogade kl
 - Exporten innehåller namn, kontaktens e-post, närvaro, allergier/matpreferenser och registrerarens namn. Ett OSA-svar med flera personer ger flera rader. Registrerade som tackat nej eller inte svarat finns också med. Separata e-postadresser för medföljande finns inte i nuvarande datamodell.
 
 ## Inloggning, OSA, offline och notiser
+
+- Utloggning finns på startsidan, inte Kontakt. Knappen spärras medan anropet pågår och fel visas om utloggningen misslyckas.
 
 - Registrering skapar Auth-kontot och därefter profilen i `users`. Misslyckas profilen tas Auth-kontot bort igen, så att gästen kan försöka på nytt med samma e-post. Konton som blev utan profil före denna ändring rättas inte automatiskt.
 - Appen lyssnar på den inloggades profil i stället för att läsa den en gång. Namnet syns direkt efter registrering och appen fastnar inte på laddningsskärmen om den startas offline.
