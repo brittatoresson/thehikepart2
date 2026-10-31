@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { Outlet, useSearchParams } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import IntroOverlay from './IntroOverlay'
@@ -97,7 +97,9 @@ export default function AppShell() {
       <div className="app-page">
         <main className="main-content">
           {error && <p className="auth-error" role="alert">{error}</p>}
-          <Outlet />
+          <Suspense fallback={null}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
       <BottomNav />

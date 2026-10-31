@@ -26,5 +26,19 @@ firebase.messaging()
 
   return {
     plugins: [react()],
+    build: {
+      rolldownOptions: {
+        output: {
+          // Egna vendor-chunks: ingen fil över 500 kB och de cachas mellan deployer.
+          codeSplitting: {
+            groups: [
+              { name: 'react', test: /node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/ },
+              { name: 'firebase-firestore', test: /node_modules[\\/]@firebase[\\/](firestore|webchannel-wrapper)[\\/]/ },
+              { name: 'firebase', test: /node_modules[\\/](@firebase|firebase|idb|tslib)[\\/]/ },
+            ],
+          },
+        },
+      },
+    },
   }
 })

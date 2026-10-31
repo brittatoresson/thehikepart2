@@ -47,7 +47,8 @@ Avbockat betyder implementerat i koden, inte verifierat i Firebase-produktion.
 - [x] Bildval valideras mot Storage-gränsen: bildtyp och mindre än 10 MiB.
 - [ ] Regeltester: blockerade av saknad Java. Inga produktionsregler har ändrats.
 - [ ] Publicera funktioner/webbapp och uppdatera redan sparad FAQ via admin.
-- [ ] Minska huvudbundlen och bildstorlekarna; bygget varnar fortfarande för en JavaScript-fil över 500 kB.
+- [x] Minska huvudbundlen: sidorna bakom inloggningen laddas vid behov och React/Firebase ligger i egna chunks; bygget varnar inte längre för filer över 500 kB.
+- [ ] Minska de statiska bilderna, t.ex. klädkodsinspirationen (1,3 MB) och hero-bilderna (~300 kB vardera).
 - [ ] Bekräfta toastmasterns riktiga e-postadress; nuvarande adress är markerad som TODO i koden.
 - [ ] Förbättra dialogernas fokusfälla, Escape-stängning och återställning av fokus.
 - [ ] Besluta serverstyrd inbjudningskontroll; nuvarande inbjudningskod kontrolleras i klienten.

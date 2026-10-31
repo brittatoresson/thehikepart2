@@ -11,6 +11,19 @@ if ('serviceWorker' in navigator) {
   })
 }
 
+// En flik som var öppen under en deploy kan försöka hämta en sid-chunk som inte
+// finns längre. Ladda om en gång för att hämta den nya versionen.
+window.addEventListener('vite:preloadError', event => {
+  try {
+    if (sessionStorage.getItem('chunk-reload') === location.pathname) return
+    sessionStorage.setItem('chunk-reload', location.pathname)
+  } catch {
+    // Utan sessionStorage laddar vi ändå om; felet visas om det kvarstår.
+  }
+  event.preventDefault()
+  location.reload()
+})
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
