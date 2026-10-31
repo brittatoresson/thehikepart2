@@ -1,7 +1,17 @@
-import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { Outlet, useSearchParams } from 'react-router-dom'
 import BottomNav from './BottomNav'
+import IntroOverlay from './IntroOverlay'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { INTRO_STORAGE_KEY, localDateKey, prefersReducedMotion, shouldShowIntro } from '../introSchedule'
+
+function readIntroShownOn() {
+  try {
+    return localStorage.getItem(INTRO_STORAGE_KEY)
+  } catch {
+    return null // Utan lagring visas intron vid varje inloggning, inte vid varje sidbyte.
+  }
+}
 
 function NotificationBanner({ onAllow, onDismiss }) {
   return (
@@ -38,15 +48,43 @@ function PushToast({ title, body, onClose }) {
 export default function AppShell() {
   const { permissionState, requestPermission, toast, clearToast, error } = usePushNotifications()
   const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  // Intron spelas första gången appen öppnas varje dag (AppShell monteras efter inloggning).
+  // 'playing' → 'leaving' (sidan glider till full storlek) → 'done'.
+  const [introPhase, setIntroPhase] = useState(() => (
+    !prefersReducedMotion() && shouldShowIntro({ lastShownOn: readIntroShownOn(), search: `?${searchParams}` })
+      ? 'playing'
+      : 'done'
+  ))
+  const introActive = introPhase !== 'done'
 
-  const showBanner = permissionState === 'default' && !bannerDismissed
+  const showBanner = permissionState === 'default' && !bannerDismissed && !introActive
 
   async function handleAllow() {
     if (await requestPermission()) setBannerDismissed(true)
   }
 
+  const handleIntroLeave = useCallback(() => setIntroPhase('leaving'), [])
+
+  const handleIntroDone = useCallback(() => {
+    try {
+      localStorage.setItem(INTRO_STORAGE_KEY, localDateKey())
+    } catch {
+      // Ingen lagring: intron visas igen vid nästa inloggning.
+    }
+    setIntroPhase('done')
+    if (searchParams.get('intro') === '1') {
+      const next = new URLSearchParams(searchParams)
+      next.delete('intro')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
+  const appClassName = `app${introActive ? ' app--intro' : ''}${introPhase === 'leaving' ? ' app--intro-leaving' : ''}`
+
   return (
-    <div className="app">
+    <div className={appClassName}>
+      {introActive && <IntroOverlay onLeave={handleIntroLeave} onDone={handleIntroDone} />}
       {showBanner && (
         <NotificationBanner
           onAllow={handleAllow}
@@ -56,10 +94,12 @@ export default function AppShell() {
       {toast && (
         <PushToast title={toast.title} body={toast.body} onClose={clearToast} />
       )}
-      <main className="main-content">
-        {error && <p className="auth-error" role="alert">{error}</p>}
-        <Outlet />
-      </main>
+      <div className="app-page">
+        <main className="main-content">
+          {error && <p className="auth-error" role="alert">{error}</p>}
+          <Outlet />
+        </main>
+      </div>
       <BottomNav />
     </div>
   )

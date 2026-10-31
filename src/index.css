@@ -64,6 +64,12 @@ h1, h2, h3, h4 {
   background: var(--cream);
 }
 
+.app-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .main-content {
   flex: 1;
   padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));

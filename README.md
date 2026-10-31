@@ -26,6 +26,26 @@ Startsidan använder designkitets två separata blomsterillustrationer från [sr
 - Senaste designval: varm linnebeige bakgrund (`#F1E8DA`) och ljusa informationskort från förslag 1, mjuk salvia och rosa accenter. Nedräkningen följer förslag 3: tunna Jost-siffror mellan två linjer utan bakgrundsplatta. Större diagonala blomsterhörn omger de staplade namnen.
 - Befintliga navigeringsikoner, länkar, nedräkning och OSA-flöde behålls. Dekorationerna har tom alternativtext och kan inte blockera klick.
 
+## Intro-animation
+
+Första gången appen öppnas varje dag (gästens lokala kalenderdag) spelas en kort intro: ett linnefärgat kuvert med grönt sigill öppnas, och startsidan stiger upp ur kuvertet som ett litet kort, växer till full storlek och blir själva sidan. Kuvertets lager ligger i [IntroOverlay.jsx](./src/components/IntroOverlay.jsx), tidslinjen och sidans animation i [IntroOverlay.css](./src/components/IntroOverlay.css); dagslogiken ligger i [introSchedule.js](./src/introSchedule.js) och testas i [tests/intro-schedule.test.mjs](./tests/intro-schedule.test.mjs).
+
+- Visas bara för inloggade (monteras i `AppShell`). Senaste visningsdag sparas i `localStorage` under `june5th:introShownOn`; saknas lagring visas intron vid varje inloggning men inte vid sidbyten.
+- `?intro=1` på valfri adress spelar intron igen, t.ex. `http://localhost:5173/?intro=1`. Parametern tas bort när intron är klar.
+- Tryck var som helst, eller Enter/mellanslag/Escape, hoppar över: sidan glider då direkt till full storlek. Hela förloppet tar drygt 5 sekunder.
+- Vid systeminställningen reducerad rörelse spelas ingen intro.
+- Kortet är den riktiga sidan. `AppShell` sätter klasserna `app--intro` och `app--intro-leaving` på appen; `.app-page` klipper sidan vid kuvertets nederkant tills kortet stigit upp och `.main-content` skalas och klipps till kortformat (bredden gånger 1,42) tills det växt klart. Sidan kan inte rullas medan intron spelas, och notisbannern visas först efteråt.
+- Kuvertet är ritat i CSS mot inbjudans pappersfärg `#F8F3EE`. Sigillet är Johannas egen bild, [src/assets/seal.png](./src/assets/seal.png) (grönt lacksigill med monogrammet BJ, genomskinlig bakgrund, 256 px); byt bara filen för ett nytt sigill. Inget ljud.
+
+### Kontroll av intron
+
+1. Inloggad gäst → öppna `/?intro=1` i mobilvy → kuvertet tonas in, sigillet lossnar, fliken fälls upp, en miniatyr av startsidan stiger upp och växer till full storlek; därefter tonas menyn in.
+2. Ladda om utan parametern samma dag → ingen intro. Ta bort `june5th:introShownOn` i `localStorage` eller vänta till nästa dag → intron visas igen.
+3. Tryck under animationen → sidan glider till full storlek och går att använda direkt.
+4. Aktivera reducerad rörelse i systemet → startsidan visas direkt utan intro.
+5. `/?osa=1&intro=1` → OSA-dialogen är tillgänglig när intron är klar.
+6. Öppna `/faq?intro=1` → samma kuvert, men FAQ-sidan stiger upp.
+
 ## Bilduppladdning
 
 “Ta foto” och “Välj bild” använder samma uppladdningsflöde. Kameravalet ber mobilen om den bakre kameran; det faktiska kameragränssnittet styrs av telefonen/webbläsaren.

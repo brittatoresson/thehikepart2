@@ -27,6 +27,7 @@ Avbockat betyder implementerat i koden, inte verifierat i Firebase-produktion.
 - [x] Fixa gilla-knappen på inkomna låtönskningar, se ovan.
 - [x] FAQ: lägg till "Hur funkar transport under dagen?" i standardfrågorna med tillfälligt svar. Om FAQ redan sparats via admin måste frågan också läggas till där; produktionsinnehållet är inte verifierat.
 - [x] OSA: även "Tyvärr nej" tillåter svar åt flera personer. Admin och CSV-export hanterar personerna.
+- [x] Intro-animation vid första öppningen varje dag: ett kuvert med Johannas eget lacksigill (BJ-monogram) öppnas och startsidan stiger upp ur det som ett litet kort och växer till full storlek. Hoppas över med tryck; `?intro=1` spelar den igen.
 
 ## Övriga frågor
 

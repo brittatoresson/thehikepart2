@@ -1,0 +1,259 @@
+/* ─── Intro: kuvertet öppnas och startsidan stiger upp ur det ─── */
+.app--intro {
+  /* Inbjudans pappersfärg som bakgrund, linnefärgat kuvert, sigill i appens mörka salvia */
+  --intro-backdrop: #F8F3EE;
+  --intro-env: #E7DDCA;
+  --intro-env-dark: #D9CCB4;
+  --intro-env-deep: #CDBDA2;
+
+  /* Geometri: kortet är sidan själv (bredd x 1,42), skalad till 0,6 inne i kuvertet.
+     Kuvertet följer sidbredden så att kortet alltid ryms, och står något under mitten. */
+  --page-w: min(100vw, 480px);
+  --card-h: calc(var(--page-w) * 1.42);
+  --card-scale: 0.6;
+  --env-w: calc(var(--page-w) * 0.6 + 22px);
+  --env-h: calc(var(--env-w) * 0.66);
+  --env-y: 44px;
+  --env-top: calc(50dvh + var(--env-y) - var(--env-h) / 2);
+  --env-bottom: calc(50dvh + var(--env-y) + var(--env-h) / 2);
+  /* translateY för sidan (origo i sidans överkant): i kuvertet respektive uppstigen */
+  --t-in: calc(var(--env-top) + 10px);
+  --t-up: calc(var(--env-top) + 46px - var(--card-h) * var(--card-scale));
+
+  /* Tidslinje (måste stämma med FULL_DURATION i IntroOverlay.jsx) */
+  --t-seal: 900ms;
+  --t-flap: 1200ms;
+  --t-flap-mid: 1650ms;
+  --t-rise: 2000ms;
+  --t-clip: 2950ms;
+  --t-grow: 3000ms;
+  --t-out: 3050ms;
+  --t-shadow-out: 3900ms;
+  --t-leave: 550ms;
+}
+
+/* ─── Lagren runt sidan ─── */
+.intro-backdrop,
+.intro-front {
+  position: fixed;
+  inset: 0;
+  transition: opacity var(--t-leave) ease;
+}
+
+.intro-backdrop {
+  z-index: 1000;
+  background: var(--intro-backdrop);
+  animation: intro-fade-in 400ms ease;
+}
+
+.intro-front {
+  z-index: 2000;
+  touch-action: none;
+  overscroll-behavior: contain;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.intro--leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-stage {
+  position: absolute;
+  inset: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+/* ─── Sidan som kort ─── */
+.app--intro .app-page {
+  position: relative;
+  z-index: 1500;
+  /* Sidan ligger ovanför kuvertets flik i lagerordningen, så den hålls helt dold tills
+     fliken passerat halvvägs. Därefter syns kortet i kuvertets urtag men klipps vid
+     kuvertets nederkant tills det stigit upp. */
+  clip-path: inset(0 0 100% 0);
+  animation:
+    intro-clip-open 1ms linear var(--t-flap-mid) forwards,
+    intro-clip-release 550ms ease-out var(--t-clip) forwards;
+}
+
+.app--intro .main-content {
+  background: var(--cream);
+  transform-origin: 50% 0;
+  transform: translateY(var(--t-in)) scale(var(--card-scale));
+  clip-path: inset(0 0 max(0px, calc(100% - var(--card-h))) 0 round 8px);
+  will-change: transform;
+  animation:
+    intro-page-rise 1000ms cubic-bezier(0.2, 0.75, 0.25, 1) var(--t-rise) forwards,
+    intro-page-grow 1050ms cubic-bezier(0.45, 0, 0.2, 1) var(--t-grow) forwards,
+    intro-page-unclip 1050ms cubic-bezier(0.45, 0, 0.2, 1) var(--t-grow) forwards;
+}
+
+/* Vid hopp: sidan glider från sitt nuvarande läge till full storlek */
+.app--intro-leaving .app-page {
+  animation: none;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--t-leave) ease;
+}
+
+.app--intro-leaving .main-content {
+  animation: none;
+  transform: none;
+  clip-path: inset(0 0 0 0 round 0px);
+  transition: transform var(--t-leave) ease, clip-path var(--t-leave) ease;
+}
+
+/* Kortets skugga ligger i bakgrundslagret och följer samma rörelse som sidan */
+.intro-shadow-clip {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 calc(100% - var(--env-bottom)) 0);
+  animation: intro-clip-release 550ms ease-out var(--t-clip) forwards;
+}
+
+.intro-card-shadow {
+  position: absolute;
+  top: 0;
+  left: calc(50% - var(--page-w) / 2);
+  width: var(--page-w);
+  height: var(--card-h);
+  border-radius: 8px;
+  box-shadow:
+    0 24px 60px -20px rgba(65, 75, 64, 0.5),
+    0 2px 8px rgba(65, 75, 64, 0.15);
+  transform-origin: 50% 0;
+  transform: translateY(var(--t-in)) scale(var(--card-scale));
+  animation:
+    intro-page-rise 1000ms cubic-bezier(0.2, 0.75, 0.25, 1) var(--t-rise) forwards,
+    intro-page-grow 1050ms cubic-bezier(0.45, 0, 0.2, 1) var(--t-grow) forwards,
+    intro-shadow-out 300ms ease var(--t-shadow-out) forwards;
+}
+
+/* ─── Kuvertet ─── */
+.intro-env-part {
+  position: absolute;
+  left: calc(50% - var(--env-w) / 2);
+  top: var(--env-top);
+  width: var(--env-w);
+  height: var(--env-h);
+  animation:
+    intro-env-in 650ms cubic-bezier(0.2, 0.7, 0.2, 1) both,
+    intro-env-out 900ms cubic-bezier(0.5, 0, 0.8, 0.4) var(--t-out) forwards;
+}
+
+.intro-env-back {
+  z-index: 1;
+  background: var(--intro-env-deep);
+  border-radius: 5px;
+  box-shadow: 0 18px 40px -18px rgba(65, 75, 64, 0.35);
+}
+
+.intro-flap-wrap {
+  z-index: 2;
+  animation:
+    intro-env-in 650ms cubic-bezier(0.2, 0.7, 0.2, 1) both,
+    intro-flap-z 900ms var(--t-flap) forwards,
+    intro-env-out 900ms cubic-bezier(0.5, 0, 0.8, 0.4) var(--t-out) forwards;
+}
+
+.intro-flap {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 0;
+  transform: perspective(700px) rotateX(0deg);
+  filter: drop-shadow(0 2px 2px rgba(60, 50, 30, 0.14));
+  animation: intro-flap-open 900ms cubic-bezier(0.45, 0.05, 0.3, 1) var(--t-flap) forwards;
+}
+
+.intro-flap-shape {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(0 0, 100% 0, 50% 58%);
+  background: linear-gradient(180deg, var(--intro-env) 0%, var(--intro-env-dark) 100%);
+}
+
+.intro-pocket-wrap {
+  z-index: 4;
+  filter: drop-shadow(0 -1px 1px rgba(60, 50, 30, 0.1));
+}
+
+.intro-pocket-shape {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(0 0, 50% 54%, 100% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, var(--intro-env-dark) 0%, var(--intro-env) 50%, var(--intro-env) 100%);
+  border-radius: 0 0 5px 5px;
+}
+
+/* Sigillet är Johannas egen bild (src/assets/seal.png, genomskinlig bakgrund) */
+.intro-seal {
+  position: absolute;
+  z-index: 5;
+  left: calc(50% - 33px);
+  top: calc(var(--env-top) + var(--env-h) * 0.58 - 33px);
+  width: 66px;
+  height: 66px;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 2px 3px rgba(30, 45, 28, 0.35));
+  animation:
+    intro-env-in 650ms cubic-bezier(0.2, 0.7, 0.2, 1) both,
+    intro-seal-off 450ms ease-in var(--t-seal) forwards;
+}
+
+/* ─── Keyframes ─── */
+@keyframes intro-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes intro-env-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes intro-env-out {
+  to { opacity: 0; transform: translateY(55vh); }
+}
+
+@keyframes intro-flap-z {
+  0%, 49% { z-index: 2; }
+  50%, 100% { z-index: 0; }
+}
+
+@keyframes intro-flap-open {
+  to { transform: perspective(700px) rotateX(-180deg); }
+}
+
+@keyframes intro-seal-off {
+  to { opacity: 0; transform: translateY(-14px) scale(1.25); }
+}
+
+@keyframes intro-page-rise {
+  to { transform: translateY(var(--t-up)) scale(var(--card-scale)); }
+}
+
+@keyframes intro-page-grow {
+  from { transform: translateY(var(--t-up)) scale(var(--card-scale)); }
+  to { transform: translateY(0) scale(1); }
+}
+
+@keyframes intro-page-unclip {
+  to { clip-path: inset(0 0 0 0 round 0px); }
+}
+
+@keyframes intro-clip-open {
+  to { clip-path: inset(0 0 max(0px, calc(100% - var(--env-bottom))) 0); }
+}
+
+@keyframes intro-clip-release {
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes intro-shadow-out {
+  to { opacity: 0; }
+}
