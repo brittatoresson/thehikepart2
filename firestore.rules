@@ -28,7 +28,8 @@ service cloud.firestore {
         && !request.resource.data.keys().hasAny(['status']);
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
-      allow delete: if isAdmin();
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
     }
 
     match /photos/{id} {

@@ -104,7 +104,7 @@ test('upload rejects anonymous users, non-images, nested paths and files at 10 M
   await assertFails(uploadBytes(ref(storage, 'photos/guest_999.jpg'), new Uint8Array(10 * 1024 * 1024), metadata))
 })
 
-test('music creation and admin moderation work; client voting and forged ownership denied', async () => {
+test('music creation, own deletion and admin moderation work; client voting, forged ownership and foreign deletion denied', async () => {
   const db = env.authenticatedContext('guest').firestore()
   const wish = { userId: 'guest', song: 'Song', votes: [], voteCount: 0 }
   await assertSucceeds(setDoc(doc(db, 'wishes/new'), wish))
@@ -115,6 +115,9 @@ test('music creation and admin moderation work; client voting and forged ownersh
   const adminWish = doc(env.authenticatedContext('admin').firestore(), 'wishes/wish')
   await assertSucceeds(updateDoc(adminWish, { status: 'approved' }))
   await assertFails(updateDoc(adminWish, { voteCount: 50 }))
+  await assertFails(deleteDoc(doc(db, 'wishes/wish')))
+  await assertFails(deleteDoc(doc(env.unauthenticatedContext().firestore(), 'wishes/new')))
+  await assertSucceeds(deleteDoc(doc(db, 'wishes/new')))
   await assertSucceeds(deleteDoc(adminWish))
 })
 

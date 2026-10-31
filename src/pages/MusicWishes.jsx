@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
 import {
-  collection, addDoc, onSnapshot,
+  collection, addDoc, deleteDoc, onSnapshot, doc, getDocFromServer,
   query, orderBy, serverTimestamp,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '../firebase'
 import { useAuth } from '../context/useAuth'
 import SpotifySearchLink from '../components/SpotifySearchLink'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { applyVoteResult, replaceWish, sortByVotes, voteErrorMessage } from '../lib/votes'
 
 export default function MusicWishes() {
   const { currentUser, userProfile } = useAuth()
+  const isAdmin = userProfile?.role === 'admin'
   const [wishes, setWishes] = useState([])
   const [song, setSong] = useState('')
   const [artist, setArtist] = useState('')
@@ -18,6 +21,8 @@ export default function MusicWishes() {
   const [submitted, setSubmitted] = useState(false)
   const [votingId, setVotingId] = useState(null)
   const voteInFlight = useRef(false)
+  const [confirm, setConfirm] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -25,9 +30,7 @@ export default function MusicWishes() {
   useEffect(() => {
     const q = query(collection(db, 'wishes'), orderBy('createdAt', 'asc'))
     return onSnapshot(q, snap => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      data.sort((a, b) => (b.voteCount ?? 0) - (a.voteCount ?? 0))
-      setWishes(data)
+      setWishes(sortByVotes(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
       setLoading(false)
       setLoadError('')
     }, () => {
@@ -72,31 +75,66 @@ export default function MusicWishes() {
     setError('')
     try {
       const { data } = await httpsCallable(functions, 'voteForWish')({ wishId: wish.id, voted })
-      if (data.voted !== voted) {
-        throw new Error('Servern bekräftade inte det begärda röstvalet.')
-      }
-      setWishes(previous => previous.map(item => item.id === wish.id
-        ? {
-          ...item,
-          votes: voted
-            ? [...new Set([...(item.votes ?? []), currentUser.uid])]
-            : (item.votes ?? []).filter(uid => uid !== currentUser.uid),
-          voteCount: data.voteCount,
-        }
-        : item).sort((a, b) => (b.voteCount ?? 0) - (a.voteCount ?? 0)))
+      // Visa det begärda läget direkt. Svarets `voted`-flagga används inte:
+      // en äldre publicerad funktion kan svara med ett annat läge än det
+      // sparade, och då doldes "Röstat" tills sidan laddades om.
+      setWishes(previous => applyVoteResult(previous, wish.id, currentUser.uid, voted, data))
     } catch (err) {
       console.error('Kunde inte uppdatera röst', err)
-      setError(err.code === 'functions/not-found'
-        ? 'Musikönskningen finns inte kvar.'
-        : 'Kunde inte registrera din röst. Kontrollera anslutningen och försök igen.')
+      setError(voteErrorMessage(err))
     } finally {
       voteInFlight.current = false
       setVotingId(null)
+    }
+    // Facit är dokumentet i Firestore. Läs om önskningen från servern efter
+    // varje försök, så att listan visar det sparade läget även om lyssnaren
+    // hann före svaret eller svaret inte beskrev det sparade läget.
+    try {
+      const latest = await getDocFromServer(doc(db, 'wishes', wish.id))
+      setWishes(previous => replaceWish(previous, wish.id, latest.exists() ? latest.data() : null))
+    } catch (err) {
+      console.warn('Kunde inte läsa om önskningen efter röstningen', err)
+    }
+  }
+
+  function requestDelete(wish) {
+    const isOwn = wish.userId === currentUser.uid
+    setConfirm({
+      message: isOwn
+        ? `Ta bort din önskning ”${wish.song}”?`
+        : `Ta bort ”${wish.song}” som ${wish.displayName ?? 'en gäst'} önskat?`,
+      onConfirm: () => deleteWish(wish),
+    })
+  }
+
+  // Ägaren och admin får radera enligt Firestore-reglerna; lyssnaren ovan tar
+  // bort posten hos alla andra.
+  async function deleteWish(wish) {
+    setConfirm(null)
+    setDeletingId(wish.id)
+    setError('')
+    try {
+      await deleteDoc(doc(db, 'wishes', wish.id))
+      setWishes(previous => replaceWish(previous, wish.id, null))
+    } catch (err) {
+      console.error('Kunde inte ta bort musikönskning', { id: wish.id, code: err.code }, err)
+      setError(err.code === 'permission-denied'
+        ? 'Du har inte behörighet att ta bort den här önskningen.'
+        : 'Önskningen kunde inte tas bort. Kontrollera anslutningen och försök igen.')
+    } finally {
+      setDeletingId(null)
     }
   }
 
   return (
     <div className="page">
+      {confirm && (
+        <ConfirmDialog
+          message={confirm.message}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
       <div className="page-header">
         <h1 className="page-title">Musikönskningar</h1>
         <p className="page-subtitle">Vilken låt vill du dansa till?</p>
@@ -158,38 +196,59 @@ export default function MusicWishes() {
         <div className="music-list">
           {wishes.map(wish => {
             const isOwn = wish.userId === currentUser.uid
-            const hasVoted = wish.votes?.includes(currentUser.uid)
+            const hasVoted = Boolean(wish.votes?.includes(currentUser.uid))
+            const canDelete = isOwn || isAdmin
+            const voteBlocked = isOwn && !hasVoted
             return (
-              <div
+              <article
                 key={wish.id}
                 className={`music-item${isOwn ? ' music-item--own' : ''}`}
               >
                 <div className="music-item-body">
-                  <p className="music-item-title">♪ {wish.song}</p>
+                  <p className="music-item-title">{wish.song}</p>
                   {wish.artist && (
                     <p className="music-item-artist">{wish.artist}</p>
                   )}
                   {wish.message && (
-                    <p className="music-item-message">"{wish.message}"</p>
+                    <p className="music-item-message">”{wish.message}”</p>
                   )}
-                  <p className="music-item-by">— {wish.displayName}</p>
-                  <SpotifySearchLink song={wish.song} artist={wish.artist} />
+                  <div className="music-item-meta">
+                    <span className="music-item-by">{wish.displayName}</span>
+                    <span>
+                      <SpotifySearchLink song={wish.song} artist={wish.artist} />
+                    </span>
+                    {canDelete && (
+                      <span>
+                        <button
+                          type="button"
+                          className="music-item-delete"
+                          onClick={() => requestDelete(wish)}
+                          disabled={deletingId !== null}
+                          aria-label={isOwn
+                            ? `Ta bort din önskning ${wish.song}`
+                            : `Ta bort önskningen ${wish.song}`}
+                        >
+                          {deletingId === wish.id ? 'Tar bort…' : 'Ta bort'}
+                        </button>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
-                  className={`vote-btn${hasVoted ? ' vote-btn--voted' : ''}`}
+                  className={`vote-btn${hasVoted ? ' vote-btn--voted' : ''}${voteBlocked ? ' vote-btn--own' : ''}`}
                   onClick={() => handleVote(wish)}
-                  disabled={(isOwn && !hasVoted) || votingId !== null}
+                  disabled={voteBlocked || votingId !== null}
                   aria-label={hasVoted ? `Ta bort din röst på ${wish.song}` : `Rösta på ${wish.song}`}
-                  aria-pressed={Boolean(hasVoted)}
+                  aria-pressed={hasVoted}
                   aria-busy={votingId === wish.id}
                   title={hasVoted ? 'Ta bort din röst'
                     : isOwn ? 'Du kan inte rösta på din egen önskning' : 'Rösta'}
                 >
-                  <span className="vote-icon" aria-hidden="true">♥</span>
+                  <span className="vote-icon" aria-hidden="true">{hasVoted ? '♥' : '♡'}</span>
                   <span className="vote-count">{wish.voteCount ?? 0}</span>
                   {hasVoted && <span className="vote-status">Röstat</span>}
                 </button>
-              </div>
+              </article>
             )
           })}
         </div>

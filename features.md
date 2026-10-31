@@ -25,6 +25,8 @@ Avbockat betyder implementerat i koden, inte verifierat i Firebase-produktion.
 - [x] Klädkod: radbrytning och "Vill du ha mer inspiration, klicka här!" med länk till en ny sida med klädguiden.
 - [x] "Lyssna på Spotify" och Spotify-länk under inkomna låtönskningar i gäst- och adminvyn. Länken öppnar sökresultat för låt och artist enligt tidigare beslutad söklänksmodell, inte en garanterad specifik inspelning.
 - [x] Fixa gilla-knappen på inkomna låtönskningar, se ovan.
+- [x] Musik: gästen kan ta bort sina egna låtönskningar och admin alla, med bekräftelse. Kräver publicerade Firestore-regler.
+- [x] Musik: kompaktare låtkort så att fler får plats i mobilvyn.
 - [x] FAQ: lägg till "Hur funkar transport under dagen?" i standardfrågorna med tillfälligt svar. Om FAQ redan sparats via admin måste frågan också läggas till där; produktionsinnehållet är inte verifierat.
 - [x] OSA: även "Tyvärr nej" tillåter svar åt flera personer. Admin och CSV-export hanterar personerna.
 

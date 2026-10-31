@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import SpotifySearchLink from '../components/SpotifySearchLink'
+import ConfirmDialog from '../components/ConfirmDialog'
 import {
   collection,
   deleteDoc, updateDoc, doc, addDoc, serverTimestamp,
@@ -8,20 +9,6 @@ import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '../firebase'
 import { useAuth } from '../context/useAuth'
 import { useLiveCollection } from '../hooks/useLiveCollection'
-
-function ConfirmDialog({ message, onConfirm, onCancel }) {
-  return (
-    <div className="confirm-overlay" onClick={onCancel} role="dialog" aria-modal="true">
-      <div className="confirm-box" onClick={e => e.stopPropagation()}>
-        <p className="confirm-msg">{message}</p>
-        <div className="confirm-actions">
-          <button className="confirm-cancel" onClick={onCancel}>Avbryt</button>
-          <button className="confirm-delete" onClick={onConfirm}>Ta bort</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 const TABS = [
   { id: 'guests', label: 'Gäster' },

@@ -9,8 +9,10 @@ Status uppdaterad 2026-10-29 mot lokal kod. Implementerat betyder inte publicera
 | Önskemål | Story | Status |
 |---|---|---|
 | Klädinspiration via länk efter klädkoden | US-14 | Implementerad lokalt med klädguiden |
-| Lyssna på Spotify från inkomna låtönskningar | US-15 | Implementerad lokalt med önskad länktext och Spotify-sökning |
-| Rätta gilla-knappen på inkomna låtönskningar | US-05 | Implementerad lokalt; backendtester godkända |
+| Lyssna på Spotify från inkomna låtönskningar | US-15 | Implementerad lokalt; länkform rättad 2026-10-31, inte publicerad |
+| Rätta gilla-knappen på inkomna låtönskningar | US-05 | Återöppnad och rättad lokalt 2026-10-31; inte publicerad |
+| Ta bort egen låtönskning; admin tar bort alla | US-05 | Implementerad lokalt 2026-10-31; kräver publicerade Firestore-regler |
+| Kompaktare låtkort i mobilvyn | US-05 | Implementerad lokalt 2026-10-31 |
 | FAQ: ”Hur funkar transport under dagen?” | US-03 | Implementerad i standardfrågor med godkänt tillfälligt svar |
 | Svara nej för flera personer i OSA | US-16 | Implementerad lokalt; admin och export uppdaterade |
 
@@ -178,6 +180,12 @@ Genomgången omfattar klientflöden, aktiv Firebase-backend, den äldre backendm
 ### US-05 – Förtydliga musikönskemål och röstning
 **Status:** Implementerad lokalt. Serverfunktion `voteForWish` behöver publiceras tillsammans med webbappen. Automatiska backendtester finns; verifiering mot produktions-Firebase återstår.
 
+**Återöppnad 2026-10-31:** Användaren rapporterar att gilla-knappen inte fungerar alls. Den publicerade webbappen innehåller klienten från 2026-10-26, och `voteForWish` finns publicerad i `europe-west1`. Klienten kastade ett fel så fort serversvaret saknade `voted` (en äldre publicerad funktion svarar så), trots att rösten sparats. Rättat lokalt: klienten använder serversvaret och Firestore-lyssnaren som facit och visar felorsak per felkod; enhetstester i `tests/votes.test.mjs`. Kravet är oförändrat: varje gäst kan gilla hur många låtar som helst, men bara en gång per låt; ett nytt klick tar bort den egna rösten. Antagande att bekräfta: egna önskningar kan fortfarande inte röstas på. Publicera `voteForWish` och webbappen tillsammans och verifiera med två gästkonton.
+
+**Lokalt test 2026-10-31:** Rösten sparades men ”Röstat” visades först efter omladdning. Klienten tog svarets `voted`-flagga som facit och skrev över det läge Firestore-lyssnaren redan visat. Nu visas det begärda läget direkt, svarets `voted` ignoreras, och önskningen läses om från servern efter varje röstförsök. Återstår att verifiera i webbläsaren.
+
+**Nytt 2026-10-31:** Gästen kan ta bort sina egna önskningar och admin alla, direkt i musikvyn med bekräftelsedialog (`deleteDoc`; `firestore.rules` tillåter nu ägaren att radera, med regeltest). Låtkorten är kompaktare så att fler får plats i mobilvyn: titel med notmarkering, artist, meddelande, en rad med önskarens namn, Spotify-länk och Ta bort, samt ett mindre hjärta med ♡/♥, röstetal och ”Röstat”. Egna kort markeras med en sidokant. Regeländringen måste publiceras (`firestore:rules`) innan egen borttagning fungerar i produktion; se README om ordningen med `deletePhoto`.
+
 **Återöppnad 2026-10-26:** Användaren rapporterar att gilla-knappen inte går att trycka på för en låt som någon annan har önskat. Tidigare implementation räknas inte som verifierad lösning på det nya felet. Orsaken är inte utredd.
 
 **Nytt beslut 2026-10-26:** Användaren bekräftar att knappen fungerar nu. Ta bort hjälptexten och den gröna röstbekräftelsen. Ett nytt klick på markerat hjärta ska ta bort den egna rösten. Detta ersätter tidigare beslut om permanenta röster. Implementerat lokalt; uppdaterad `voteForWish` måste publiceras före webbappen.
@@ -206,6 +214,8 @@ Genomgången omfattar klientflöden, aktiv Firebase-backend, den äldre backendm
 
 ### US-15 – Lyssna på låtönskningar på Spotify
 **Status:** Söklänkar implementerade lokalt efter beslut 2026-10-26. Länktexten är nu ”Lyssna på Spotify” i gäst- och adminlistan. Tillgänglighetsnamnet förklarar att länken söker på låttitel och eventuell artist i en ny flik. Ingen API-integration eller datamigrering krävs. Lint passerar; bygge lyckas med storleksvarning. Inte publicerat.
+
+**Uppdatering 2026-10-31:** Användaren rapporterar att länken inte fungerar korrekt. Länken bytte från `/search/results/<sökord>` till `open.spotify.com/search/<sökord>`, den form som Spotify-appen och webbspelaren öppnar. Länken visas inte för önskningar utan låttitel och artist. URL-kodning av specialtecken testas i `tests/spotify-link.test.mjs`. Inte publicerat.
 
 **Som gäst vill jag kunna öppna Spotify från en inkommen låtönskning, så att jag kan lyssna på låten.**
 
