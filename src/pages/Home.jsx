@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/useAuth'
@@ -9,6 +9,30 @@ import heroBottomRight from '../assets/botanical/hero_bottom_right.png'
 const WEDDING = new Date('2027-06-05T14:00:00+02:00') // svensk sommartid, oavsett gästens tidszon
 const WEDDING_DAY_END = Date.parse('2027-06-05T22:00:00.000Z') // 6 juni 2027 kl. 00.00 i Sverige (CEST)
 const MAPS_URL = 'https://maps.google.com/?q=Östergötland,+Sverige'
+
+// Samma linjeikoner som i bottennavigeringen, så startsidans kort känns igen.
+const EnvelopeIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <polyline points="22,6 12,13 2,6" />
+  </svg>
+)
+
+const MusicIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M9 18V5l12-2v13" />
+    <circle cx="6" cy="18" r="3" />
+    <circle cx="18" cy="16" r="3" />
+  </svg>
+)
+
+const GalleryIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+)
 
 function calcTimeLeft() {
   const now = Date.now()
@@ -307,6 +331,14 @@ export default function Home() {
       <Countdown />
 
       <div className="home-cards">
+        <button type="button" className="home-cta" onClick={() => setShowRsvp(true)}>
+          <span className="home-cta-icon" aria-hidden="true"><EnvelopeIcon /></span>
+          <span className="home-cta-text">
+            <span className="home-cta-title">O.S.A.</span>
+            <span className="home-cta-sub">Vänligen svara senast 1 april 2027</span>
+          </span>
+          <span className="home-cta-arrow" aria-hidden="true">›</span>
+        </button>
         <div className="info-card">
           <h2>Datum &amp; Tid</h2>
           <p>Lördagen den 5 juni 2027</p>
@@ -317,11 +349,18 @@ export default function Home() {
           <p>Östergötland, Sverige</p>
           <p>Adress meddelas separat</p>
         </a>
-        <button className="info-card info-card--link" onClick={() => setShowRsvp(true)}>
-          <h2>O.S.A.</h2>
-          <p>Vänligen svara senast</p>
-          <p>1 april 2027</p>
-        </button>
+        <div className="home-tiles">
+          <Link to="/music" className="home-tile">
+            <MusicIcon />
+            <h2>Musik</h2>
+            <p>Vilken låt vill du dansa till?</p>
+          </Link>
+          <Link to="/gallery" className="home-tile">
+            <GalleryIcon />
+            <h2>Bildgalleri</h2>
+            <p>Dela era minnen</p>
+          </Link>
+        </div>
       </div>
 
       <div className="contact-account">

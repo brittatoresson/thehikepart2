@@ -184,6 +184,13 @@ h1, h2, h3, h4 {
   right: -43px;
 }
 
+/* På de smalaste telefonerna (320 px) krymps hörnen något så att de inte nuddar platsraden. */
+@media (max-width: 359px) {
+  .home-floral {
+    width: 156px;
+  }
+}
+
 .home-eyebrow {
   font-size: 0.75rem;
   color: var(--text);
@@ -303,7 +310,158 @@ h1, h2, h3, h4 {
   line-height: 1.7;
 }
 
+/* ─── Home: primary O.S.A. action ─── */
+.home-cta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: 76px;
+  padding: 1rem 1.25rem;
+  background: var(--sage-dark);
+  color: var(--cream-dark);
+  border: 1px solid var(--sage-dark);
+  border-radius: var(--radius);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-cta:hover {
+  background: #475C42;
+  box-shadow: 0 4px 16px rgba(95, 126, 92, 0.2);
+  transform: translateY(-2px);
+}
+
+.home-cta:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.home-cta:focus-visible {
+  outline: 2px solid var(--sage-dark);
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
+
+.home-cta-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.home-cta-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.home-cta-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-cta-title {
+  font-size: 1.25rem;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.home-cta-sub {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.home-cta-arrow {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* ─── Home: supporting tiles ─── */
+.home-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.home-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 112px;
+  padding: 1.1rem 1rem;
+  background: var(--cream-dark);
+  border: 1px solid var(--cream-border);
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+  text-align: center;
+  transition: box-shadow 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-tile:hover {
+  box-shadow: 0 4px 16px rgba(95, 126, 92, 0.15);
+  transform: translateY(-2px);
+}
+
+.home-tile:focus-visible {
+  border-radius: var(--radius);
+}
+
+.home-tile svg {
+  width: 24px;
+  height: 24px;
+  color: var(--sage-dark);
+  margin-bottom: 0.2rem;
+}
+
+.home-tile h2 {
+  font-size: 1rem;
+  color: var(--sage-dark);
+  letter-spacing: 0.04em;
+}
+
+.home-tile p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+@media (max-width: 339px) {
+  .home-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─── FAQ ─── */
+.faq-header {
+  border-bottom: 0;
+  padding: 0.25rem 0 0;
+  margin-bottom: 1.75rem;
+}
+
+.faq-sprig {
+  display: block;
+  width: 44px;
+  height: auto;
+  margin: 0 auto 0.75rem;
+  pointer-events: none;
+  user-select: none;
+}
+
 .faq-list {
   display: flex;
   flex-direction: column;
@@ -315,13 +473,22 @@ h1, h2, h3, h4 {
   border: 1px solid var(--cream-border);
   border-radius: var(--radius);
   overflow: hidden;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.faq-item[open] {
+  background: #FFFCF8;
+  border-color: var(--sage-light);
+  box-shadow: 0 5px 20px rgba(45, 50, 38, 0.04);
 }
 
 .faq-item summary {
-  padding: 1.1rem 1.25rem;
+  min-height: 52px;
+  padding: 0.9rem 1.1rem 0.9rem 1.25rem;
   font-family: var(--font-body);
-  font-size: 1.05rem;
-  color: var(--sage-dark);
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--text);
   cursor: pointer;
   list-style: none;
   display: flex;
@@ -330,6 +497,17 @@ h1, h2, h3, h4 {
   gap: 0.75rem;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease;
+}
+
+.faq-item[open] summary {
+  color: var(--sage-dark);
+}
+
+.faq-item summary:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: -3px;
+  border-radius: var(--radius);
 }
 
 .faq-item summary::-webkit-details-marker {
@@ -337,17 +515,19 @@ h1, h2, h3, h4 {
 }
 
 .faq-item summary::after {
-  content: '+';
-  color: var(--sage);
-  font-size: 1.3rem;
-  font-weight: 300;
-  line-height: 1;
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-right: 1.5px solid var(--sage);
+  border-bottom: 1.5px solid var(--sage);
+  transform: translateY(-2px) rotate(45deg);
   transition: transform 0.2s ease;
   flex-shrink: 0;
 }
 
 .faq-item[open] summary::after {
-  transform: rotate(45deg);
+  transform: translateY(2px) rotate(-135deg);
 }
 
 .dress-code-image {
@@ -370,10 +550,10 @@ h1, h2, h3, h4 {
 }
 
 .faq-answer {
-  padding: 0.75rem 1.25rem 1.1rem;
-  font-size: 0.88rem;
-  color: var(--text-muted);
-  line-height: 1.75;
+  padding: 0.85rem 1.25rem 1.2rem;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.65;
   border-top: 1px solid var(--cream-border);
 }
 
@@ -2102,4 +2282,18 @@ h1, h2, h3, h4 {
   color: #b94040;
   border-color: #f5c6c6;
   background: #fdeaea;
+}
+
+/* ─── Reduced motion ─── */
+/* Intron hoppas redan över i AppShell när gästen valt reducerad rörelse. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

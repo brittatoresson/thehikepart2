@@ -4,6 +4,7 @@ import { functions } from '../firebase'
 import defaultFaqs from '../../functions/faq-defaults.json'
 import FaqAnswer from '../components/FaqAnswer'
 import { Link } from 'react-router-dom'
+import sprig from '../assets/botanical/small_sage_sprig.webp'
 
 export default function FAQ() {
   const [faqs, setFaqs] = useState(defaultFaqs)
@@ -33,7 +34,8 @@ export default function FAQ() {
 
   return (
     <div className="page">
-      <div className="page-header">
+      <div className="page-header faq-header">
+        <img className="faq-sprig" src={sprig} alt="" aria-hidden="true" />
         <h1 className="page-title">Vanliga frågor</h1>
         <p className="page-subtitle">Allt ni behöver veta</p>
       </div>

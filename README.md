@@ -18,13 +18,14 @@
 
 ## Design
 
-Startsidan använder designkitets två separata blomsterillustrationer från [src/assets/botanical](./src/assets/botanical). Övriga dekorationsförslag i kitet har inte lagts till på undersidorna.
+Startsidan använder designkitets två separata blomsterillustrationer från [src/assets/botanical](./src/assets/botanical). Av kitets övriga dekorationer används bara en liten salviakvist ovanför FAQ-rubriken; inga andra undersidor har dekorationer.
 
 - Pinyon Script används endast för namnen på startsidan.
 - Jost används för övrig text i hela appen, enligt valt alternativ A. Det ersätter tills vidare Glacial Indifference; nya fontfiler/licens behövs om det senare ska bytas.
 - Typsnitten laddas från Google Fonts med `display=swap` och lokala reservtypsnitt. Jost och Pinyon Script distribueras med SIL Open Font License i Google Fonts.
 - Senaste designval: varm linnebeige bakgrund (`#F1E8DA`) och ljusa informationskort från förslag 1, mjuk salvia och rosa accenter. Nedräkningen följer förslag 3: tunna Jost-siffror mellan två linjer utan bakgrundsplatta. Större diagonala blomsterhörn omger de staplade namnen.
 - Befintliga navigeringsikoner, länkar, nedräkning och OSA-flöde behålls. Dekorationerna har tom alternativtext och kan inte blockera klick.
+- Kompletteringar från designkitets handoff (31 okt 2026): O.S.A. är startsidans enda framhävda knapp (mörkgrön, öppnar samma OSA-formulär som förut) och ligger direkt under nedräkningen; Musik och Bildgalleri har två lätta genvägskort under informationskorten (texterna är sidornas befintliga underrubriker); FAQ har lugnare dragspelskort (öppen fråga får ljusare pappersyta, pil-indikator och synlig tangentbordsfokus); navigeringen markerar aktiv flik med ett tunt streck i stället för skugga; alla övergångar stängs av vid `prefers-reduced-motion`. Kitets ljusare elfenbenspalett (`#F9F5F0`/`#365A40`) och nedräkningskortet infördes inte, eftersom linnebeige bakgrund och nedräkning utan platta var medvetna val (se ovan).
 
 ## Intro-animation
 
