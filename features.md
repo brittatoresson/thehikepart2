@@ -30,6 +30,7 @@ Avbockat betyder implementerat i koden, inte verifierat i Firebase-produktion.
 - [x] FAQ: lägg till "Hur funkar transport under dagen?" i standardfrågorna med tillfälligt svar. Om FAQ redan sparats via admin måste frågan också läggas till där; produktionsinnehållet är inte verifierat.
 - [x] OSA: även "Tyvärr nej" tillåter svar åt flera personer. Admin och CSV-export hanterar personerna.
 - [x] Intro-animation vid första öppningen varje dag: ett kuvert med Johannas eget lacksigill (BJ-monogram) öppnas och startsidan stiger upp ur det som ett litet kort och växer till full storlek. Hoppas över med tryck; `?intro=1` spelar den igen.
+- [x] Foto: välj och ladda upp flera bilder samtidigt (tre åt gången parallellt, resten köas). Bilderna skalas ned i webbläsaren till högst 2560 px som JPEG innan uppladdning, vilket gör uppladdning och galleri snabbare och tar bort EXIF/GPS. HEIC som webbläsaren inte kan läsa och GIF laddas upp oförändrade.
 
 ## Övriga frågor
 
@@ -44,7 +45,7 @@ Avbockat betyder implementerat i koden, inte verifierat i Firebase-produktion.
 - [x] Borttagen extra bakgrundsnotis som kunde visas utöver FCM:s automatiska notis.
 - [x] Cachefel får inte dölja ett lyckat nätverkssvar; andra appars cache raderas inte vid service worker-uppdatering.
 - [x] OSA-direktlänken bevaras även via registreringslänken; registrering visar fel vid saknad konfiguration eller tomt namn.
-- [x] Bildval valideras mot Storage-gränsen: bildtyp och mindre än 10 MiB.
+- [x] Bildval valideras mot Storage-gränsen: bildtyp och mindre än 10 MiB efter nedskalning.
 - [ ] Regeltester: blockerade av saknad Java. Inga produktionsregler har ändrats.
 - [ ] Publicera funktioner/webbapp och uppdatera redan sparad FAQ via admin.
 - [x] Minska huvudbundlen: sidorna bakom inloggningen laddas vid behov och React/Firebase ligger i egna chunks; bygget varnar inte längre för filer över 500 kB.

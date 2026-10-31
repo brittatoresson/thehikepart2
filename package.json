@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/service-worker.test.mjs tests/intro-schedule.test.mjs tests/votes.test.mjs tests/spotify-link.test.mjs && npm --prefix functions test",
+    "test": "node --test tests/service-worker.test.mjs tests/intro-schedule.test.mjs tests/votes.test.mjs tests/spotify-link.test.mjs tests/photo-upload.test.mjs && npm --prefix functions test",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

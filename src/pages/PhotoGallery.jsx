@@ -8,6 +8,17 @@ import { db, storage, functions } from '../firebase'
 import { useAuth } from '../context/useAuth'
 import UploaderFilter from '../components/UploaderFilter'
 import { useLiveCollection } from '../hooks/useLiveCollection'
+import {
+  MAX_UPLOAD_BYTES, UPLOAD_CONCURRENCY, compressImage, fileExtension, photoStoragePath, runWithConcurrency,
+} from '../lib/photoUpload'
+
+function uploadErrorMessage(err) {
+  if (err.stage === 'too-large') return 'Bilden är för stor, välj en bild som är mindre än 10 MiB.'
+  if (err.stage === 'save') return 'Bildfilen laddades upp men kunde inte läggas till i galleriet. Kontakta brudparet om bilden inte visas.'
+  if (err.code === 'storage/unauthorized') return 'Du saknar behörighet att ladda upp bilden. Kontakta brudparet.'
+  if (err.code === 'storage/retry-limit-exceeded') return 'Uppladdningen tog för lång tid. Kontrollera din anslutning och försök igen.'
+  return 'Uppladdningen misslyckades. Kontrollera din anslutning och försök igen.'
+}
 
 const CameraIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -37,8 +48,9 @@ export default function PhotoGallery() {
   const [selectedUploaders, setSelectedUploaders] = useState([])
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [uploadCount, setUploadCount] = useState({ done: 0, total: 0 })
   const [uploadError, setUploadError] = useState(null)
-  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(0)
   const [fullscreen, setFullscreen] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
@@ -67,33 +79,27 @@ export default function PhotoGallery() {
     return () => { document.body.style.overflow = '' }
   }, [fullscreen])
 
-  async function handleFile(e) {
-    const input = e.target
-    const file = input.files?.[0]
-    if (!file || uploadInFlight.current) return
-    if (!file.type.startsWith('image/') || file.size >= 10 * 1024 * 1024) {
-      setUploadError('Välj en bild som är mindre än 10 MiB.')
-      input.value = ''
-      return
+  async function uploadOne(file, index, batchTime, bytes) {
+    const compressed = await compressImage(file)
+    if (compressed.size >= MAX_UPLOAD_BYTES) {
+      throw Object.assign(new Error('Bilden är för stor'), { stage: 'too-large' })
     }
-
-    uploadInFlight.current = true
-    setUploading(true)
-    setProgress(0)
-    setUploadError(null)
-    setUploadSuccess(false)
-
-    let stage = 'upload'
+    const path = photoStoragePath(currentUser.uid, batchTime, index, fileExtension(compressed.name))
+    const task = uploadBytesResumable(ref(storage, path), compressed, { contentType: compressed.type })
+    task.on('state_changed', snap => {
+      bytes[index] = { sent: snap.bytesTransferred, total: snap.totalBytes }
+      const sent = bytes.reduce((sum, b) => sum + b.sent, 0)
+      const total = bytes.reduce((sum, b) => sum + b.total, 0)
+      setProgress(total > 0 ? Math.round((sent / total) * 100) : 0)
+    })
+    let snapshot
     try {
-      const ext = file.name.split('.').pop() || 'jpg'
-      const path = `photos/${currentUser.uid}_${Date.now()}.${ext}`
-      const storageRef = ref(storage, path)
-      const task = uploadBytesResumable(storageRef, file)
-      task.on('state_changed', snap => {
-        setProgress(snap.totalBytes > 0 ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100) : 0)
-      })
-      const snapshot = await task
-      stage = 'save'
+      snapshot = await task
+    } catch (err) {
+      err.stage = 'upload'
+      throw err
+    }
+    try {
       const url = await getDownloadURL(snapshot.ref)
       await addDoc(collection(db, 'photos'), {
         url,
@@ -102,17 +108,42 @@ export default function PhotoGallery() {
         displayName: userProfile?.displayName ?? 'Gäst',
         createdAt: serverTimestamp(),
       })
-      setUploadSuccess(true)
     } catch (err) {
-      console.error('Bilduppladdning misslyckades', { stage, code: err.code }, err)
-      if (stage === 'save') {
-        setUploadError('Bildfilen laddades upp men kunde inte läggas till i galleriet. Kontakta brudparet om bilden inte visas.')
-      } else if (err.code === 'storage/unauthorized') {
-        setUploadError('Du saknar behörighet att ladda upp bilden. Kontakta brudparet.')
-      } else if (err.code === 'storage/retry-limit-exceeded') {
-        setUploadError('Uppladdningen tog för lång tid. Kontrollera din anslutning och försök igen.')
-      } else {
-        setUploadError('Uppladdningen misslyckades. Kontrollera din anslutning och försök igen.')
+      err.stage = 'save'
+      throw err
+    }
+  }
+
+  async function handleFile(e) {
+    const input = e.target
+    const files = [...(input.files ?? [])].filter(file => file.type.startsWith('image/'))
+    if (uploadInFlight.current) return
+    if (files.length === 0) {
+      if (input.files?.length) setUploadError('Välj bilder i ett bildformat.')
+      input.value = ''
+      return
+    }
+
+    uploadInFlight.current = true
+    setUploading(true)
+    setProgress(0)
+    setUploadCount({ done: 0, total: files.length })
+    setUploadError(null)
+    setUploadSuccess(0)
+
+    try {
+      const batchTime = Date.now()
+      const bytes = files.map(() => ({ sent: 0, total: 0 }))
+      const results = await runWithConcurrency(files, UPLOAD_CONCURRENCY, async (file, index) => {
+        await uploadOne(file, index, batchTime, bytes)
+        setUploadCount(count => ({ ...count, done: count.done + 1 }))
+      })
+      const failures = results.filter(result => result.status === 'rejected').map(result => result.reason)
+      failures.forEach(err => console.error('Bilduppladdning misslyckades', { stage: err.stage, code: err.code }, err))
+      setUploadSuccess(files.length - failures.length)
+      if (failures.length > 0) {
+        const prefix = files.length > 1 ? `${failures.length} av ${files.length} bilder kunde inte laddas upp. ` : ''
+        setUploadError(prefix + uploadErrorMessage(failures[0]))
       }
     } finally {
       input.value = ''
@@ -161,14 +192,24 @@ export default function PhotoGallery() {
         </div>
       )}
 
-      {uploadSuccess && <p role="status">Bilden har lagts till i galleriet.</p>}
+      {uploadSuccess > 0 && (
+        <p role="status">
+          {uploadSuccess === 1 ? 'Bilden har lagts till i galleriet.' : `${uploadSuccess} bilder har lagts till i galleriet.`}
+        </p>
+      )}
       {deleteError && <div className="upload-error-wrap" role="alert"><p className="upload-error-msg">{deleteError}</p></div>}
       {deleteSuccess && <p className="gallery-success" role="status">Bilden har tagits bort.</p>}
 
       {uploading ? (
         <div className="upload-progress-wrap">
           <div className="upload-progress-bar" style={{ width: `${progress}%` }} />
-          <p className="upload-progress-label" role="status">{progress === 100 ? 'Sparar i galleriet…' : `Laddar upp… ${progress}%`}</p>
+          <p className="upload-progress-label" role="status">
+            {progress === 100
+              ? 'Sparar i galleriet…'
+              : uploadCount.total > 1
+                ? `Laddar upp ${uploadCount.done} av ${uploadCount.total} bilder… ${progress}%`
+                : `Laddar upp… ${progress}%`}
+          </p>
         </div>
       ) : (
         <div className="gallery-actions">
@@ -176,7 +217,7 @@ export default function PhotoGallery() {
             <CameraIcon /> Ta foto
           </button>
           <button className="gallery-btn" onClick={() => fileRef.current.click()}>
-            <ImageIcon /> Välj bild
+            <ImageIcon /> Välj bilder
           </button>
         </div>
       )}
@@ -193,6 +234,7 @@ export default function PhotoGallery() {
         ref={fileRef}
         type="file"
         accept="image/*"
+        multiple
         onChange={handleFile}
         hidden
       />
