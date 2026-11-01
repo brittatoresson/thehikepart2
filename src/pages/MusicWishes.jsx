@@ -9,6 +9,7 @@ import { useAuth } from '../context/useAuth'
 import SpotifySearchLink from '../components/SpotifySearchLink'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { applyVoteResult, replaceWish, sortByVotes, voteErrorMessage } from '../lib/votes'
+import musikIllustration from '../assets/musik-illustration.jpg'
 
 export default function MusicWishes() {
   const { currentUser, userProfile } = useAuth()
@@ -139,6 +140,12 @@ export default function MusicWishes() {
         <h1 className="page-title">Musikönskningar</h1>
         <p className="page-subtitle">Vilken låt vill du dansa till?</p>
       </div>
+      <img
+        className="page-illustration"
+        src={musikIllustration}
+        alt="Britta och Johanna, tecknade, vid ett DJ-bord och på dansgolvet"
+        decoding="async"
+      />
 
       <div className="music-form">
         {submitted && <p className="music-success" role="status">Tack för din önskning!</p>}

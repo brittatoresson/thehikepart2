@@ -11,6 +11,7 @@ import { useLiveCollection } from '../hooks/useLiveCollection'
 import {
   MAX_UPLOAD_BYTES, UPLOAD_CONCURRENCY, compressImage, fileExtension, photoStoragePath, runWithConcurrency,
 } from '../lib/photoUpload'
+import galleriIllustration from '../assets/galleri-illustration.jpg'
 
 function uploadErrorMessage(err) {
   if (err.stage === 'too-large') return 'Bilden är för stor, välj en bild som är mindre än 10 MiB.'
@@ -185,6 +186,12 @@ export default function PhotoGallery() {
         <h1 className="page-title">Bildgalleri</h1>
         <p className="page-subtitle">Dela era minnen</p>
       </div>
+      <img
+        className="page-illustration"
+        src={galleriIllustration}
+        alt="Britta och Johanna, tecknade, en fotograferar och en poserar"
+        decoding="async"
+      />
 
       {uploadError && (
         <div className="upload-error-wrap" role="alert">

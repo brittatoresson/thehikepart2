@@ -289,6 +289,18 @@ h1, h2, h3, h4 {
   margin-top: 1rem;
 }
 
+/* ─── Home: illustration mellan nedräkningen och O.S.A. ───
+   Bildens vita bakgrund multipliceras bort mot sidans beige, som på undersidorna */
+.home-illustration {
+  display: block;
+  width: min(60%, 230px);
+  height: auto;
+  margin: 1.5rem auto 0;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  user-select: none;
+}
+
 .info-card {
   background: var(--cream-dark);
   border: 1px solid var(--cream-border);
@@ -450,7 +462,7 @@ h1, h2, h3, h4 {
 .faq-header {
   border-bottom: 0;
   padding: 0.25rem 0 0;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1rem;
 }
 
 .faq-sprig {
@@ -458,6 +470,19 @@ h1, h2, h3, h4 {
   width: 44px;
   height: auto;
   margin: 0 auto 0.75rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Illustration under sidrubriken, ovanför första innehållsblocket (FAQ, Musik, Galleri).
+   Bildernas vita bakgrund multipliceras bort mot sidans beige */
+.page-illustration {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  margin: 0 auto 1.5rem;
+  mix-blend-mode: multiply;
   pointer-events: none;
   user-select: none;
 }

@@ -18,7 +18,7 @@
 
 ## Design
 
-Startsidan använder designkitets två separata blomsterillustrationer från [src/assets/botanical](./src/assets/botanical). Av kitets övriga dekorationer används bara en liten salviakvist ovanför FAQ-rubriken; inga andra undersidor har dekorationer.
+Startsidan använder designkitets två separata blomsterillustrationer från [src/assets/botanical](./src/assets/botanical). Av kitets övriga dekorationer används bara en liten salviakvist ovanför FAQ-rubriken. Därtill har fem sidor en tecknad illustration av Britta och Johanna (egna bilder utanför kitet, 1 nov 2026): på startsidan mellan nedräkningen och O.S.A. (`home-illustration.jpg`) och som banderoll direkt under sidrubriken på FAQ, Musik, Bildgalleri och Kontakt (`faq-`, `musik-`, `galleri-` och `kontakt-illustration.jpg`, klassen `page-illustration`). Bilderna har vit bakgrund i bildfilen och ritas med `mix-blend-mode: multiply`, så det vita försvinner mot sidans beige (rent vitt i teckningen, som skjortklänningen, får därmed sidans färg). De är nedskalade till 720 px (startsidan) respektive 1400 px bredd som JPEG för laddningstidens skull; originalen på 1254 respektive ~2000 px är inte incheckade.
 
 - Pinyon Script används endast för namnen på startsidan.
 - Jost används för övrig text i hela appen, enligt valt alternativ A. Det ersätter tills vidare Glacial Indifference; nya fontfiler/licens behövs om det senare ska bytas.

@@ -5,6 +5,7 @@ import { db } from '../firebase'
 import { useAuth } from '../context/useAuth'
 import heroTopLeft from '../assets/botanical/hero_top_left.png'
 import heroBottomRight from '../assets/botanical/hero_bottom_right.png'
+import homeIllustration from '../assets/home-illustration.jpg'
 
 const WEDDING = new Date('2027-06-05T14:00:00+02:00') // svensk sommartid, oavsett gästens tidszon
 const WEDDING_DAY_END = Date.parse('2027-06-05T22:00:00.000Z') // 6 juni 2027 kl. 00.00 i Sverige (CEST)
@@ -329,6 +330,13 @@ export default function Home() {
       </div>
 
       <Countdown />
+
+      <img
+        className="home-illustration"
+        src={homeIllustration}
+        alt="Britta och Johanna, tecknade"
+        decoding="async"
+      />
 
       <div className="home-cards">
         <button type="button" className="home-cta" onClick={() => setShowRsvp(true)}>

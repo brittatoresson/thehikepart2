@@ -5,6 +5,7 @@ import defaultFaqs from '../../functions/faq-defaults.json'
 import FaqAnswer from '../components/FaqAnswer'
 import { Link } from 'react-router-dom'
 import sprig from '../assets/botanical/small_sage_sprig.webp'
+import faqIllustration from '../assets/faq-illustration.jpg'
 
 export default function FAQ() {
   const [faqs, setFaqs] = useState(defaultFaqs)
@@ -39,6 +40,12 @@ export default function FAQ() {
         <h1 className="page-title">Vanliga frågor</h1>
         <p className="page-subtitle">Allt ni behöver veta</p>
       </div>
+      <img
+        className="page-illustration"
+        src={faqIllustration}
+        alt="Britta och Johanna, tecknade, med ett frågetecken och ett utropstecken"
+        decoding="async"
+      />
       {loadError && (
         <div className="faq-load-error" role="alert">
           <p>{loadError}</p>

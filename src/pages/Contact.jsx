@@ -1,4 +1,5 @@
 import { useAuth } from '../context/useAuth'
+import kontaktIllustration from '../assets/kontakt-illustration.jpg'
 
 const COUPLE_EMAIL = 'britta.toresson@gmail.com,johanna.norell@live.com'
 const TOASTMASTER_EMAIL = 'toastmaster@june5th.se' // TODO: uppdatera med rätt adress
@@ -32,6 +33,12 @@ export default function Contact() {
         <h1 className="page-title">Kontakt</h1>
         <p className="page-subtitle">Vi hör gärna från er</p>
       </div>
+      <img
+        className="page-illustration"
+        src={kontaktIllustration}
+        alt="Britta och Johanna, tecknade, skriver brev vid ett bord fullt av kuvert"
+        decoding="async"
+      />
 
       <p className="contact-intro">
         Har ni frågor inför den stora dagen?
