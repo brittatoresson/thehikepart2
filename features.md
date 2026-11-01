@@ -50,6 +50,8 @@ Avbockat betyder implementerat i koden, inte verifierat i Firebase-produktion.
 - [ ] Regeltester: blockerade av saknad Java. Inga produktionsregler har ändrats.
 - [ ] Publicera funktioner/webbapp och uppdatera redan sparad FAQ via admin.
 - [x] Minska huvudbundlen: sidorna bakom inloggningen laddas vid behov och React/Firebase ligger i egna chunks; bygget varnar inte längre för filer över 500 kB.
+- [x] Responsivitet i mobil: formulärfält har 16 px text så att iOS Safari inte zoomar vid fokus, OSA-rutan använder synlig skärmhöjd (dvh), gästernas Ta bort-knappar har minst 44 px tryckyta, korta sidor scrollar inte i installerad app, och hover-effekter gäller bara enheter med mus.
+- [ ] Responsivitet, ej åtgärdat: liten text i bottenmeny och nedräkning (designbeslut), intro-animationen går utanför skärmen i liggande läge.
 - [ ] Minska de statiska bilderna, t.ex. klädkodsinspirationen (1,3 MB) och hero-bilderna (~300 kB vardera).
 - [ ] Bekräfta toastmasterns riktiga e-postadress; nuvarande adress är markerad som TODO i koden.
 - [ ] Förbättra dialogernas fokusfälla, Escape-stängning och återställning av fokus.
