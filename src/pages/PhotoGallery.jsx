@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   collection, addDoc, serverTimestamp,
 } from 'firebase/firestore'
@@ -7,6 +8,7 @@ import { httpsCallable } from 'firebase/functions'
 import { db, storage, functions } from '../firebase'
 import { useAuth } from '../context/useAuth'
 import UploaderFilter from '../components/UploaderFilter'
+import PhotoViewer from '../components/PhotoViewer'
 import { useLiveCollection } from '../hooks/useLiveCollection'
 import {
   MAX_UPLOAD_BYTES, UPLOAD_CONCURRENCY, compressImage, fileExtension, photoStoragePath, runWithConcurrency,
@@ -36,12 +38,8 @@ const ImageIcon = () => (
   </svg>
 )
 
-const CloseIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-)
+// Öppen bild ligger i adressen (?bild=<id>) så att telefonens bakåtknapp stänger den.
+const PHOTO_PARAM = 'bild'
 
 export default function PhotoGallery() {
   const { currentUser, userProfile } = useAuth()
@@ -52,7 +50,6 @@ export default function PhotoGallery() {
   const [uploadCount, setUploadCount] = useState({ done: 0, total: 0 })
   const [uploadError, setUploadError] = useState(null)
   const [uploadSuccess, setUploadSuccess] = useState(0)
-  const [fullscreen, setFullscreen] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
@@ -75,10 +72,43 @@ export default function PhotoGallery() {
     [photos, selectedUploaders],
   )
 
+  const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const openId = searchParams.get(PHOTO_PARAM)
+  const openIndex = openId ? visiblePhotos.findIndex(photo => photo.id === openId) : -1
+
+  function paramsWithPhoto(id) {
+    const next = new URLSearchParams(searchParams)
+    if (id) next.set(PHOTO_PARAM, id)
+    else next.delete(PHOTO_PARAM)
+    return next
+  }
+
+  function openPhoto(photo) {
+    setSearchParams(paramsWithPhoto(photo.id), { state: { photoViewer: true } })
+  }
+
+  // Öppnades bilden här går vi tillbaka i historiken, så att bakåtknappen och
+  // krysset gör samma sak. En direktlänk till en bild har inget steg att gå tillbaka till.
+  function closePhoto() {
+    if (location.state?.photoViewer) navigate(-1)
+    else setSearchParams(paramsWithPhoto(null), { replace: true })
+  }
+
+  // Svep byter bild utan nytt historiksteg, så bakåt stänger alltid visningen direkt.
+  function showPhoto(index) {
+    setSearchParams(paramsWithPhoto(visiblePhotos[index].id), { replace: true, state: location.state })
+  }
+
+  // Bilden finns inte (borttagen eller okänd länk): ta bort den ur adressen.
   useEffect(() => {
-    document.body.style.overflow = fullscreen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [fullscreen])
+    if (openId && !loading && openIndex === -1) {
+      const next = new URLSearchParams(searchParams)
+      next.delete(PHOTO_PARAM)
+      setSearchParams(next, { replace: true })
+    }
+  }, [openId, loading, openIndex, searchParams, setSearchParams])
 
   async function uploadOne(file, index, batchTime, bytes) {
     const compressed = await compressImage(file)
@@ -271,7 +301,7 @@ export default function PhotoGallery() {
             <div className="gallery-photo" key={photo.id}>
               <button
                 className="gallery-item"
-                onClick={() => setFullscreen(photo)}
+                onClick={() => openPhoto(photo)}
                 aria-label={`Foto av ${photo.displayName}`}
               >
                 <img src={photo.url} alt="" loading="lazy" />
@@ -310,24 +340,13 @@ export default function PhotoGallery() {
         </div>
       )}
 
-      {fullscreen && (
-        <div className="gallery-fullscreen" onClick={() => setFullscreen(null)}>
-          <button
-            className="gallery-fullscreen-close"
-            onClick={() => setFullscreen(null)}
-            aria-label="Stäng"
-          >
-            <CloseIcon />
-          </button>
-          <img
-            src={fullscreen.url}
-            alt={`Foto av ${fullscreen.displayName}`}
-            onClick={e => e.stopPropagation()}
-          />
-          <p className="gallery-fullscreen-caption">
-            Foto av {fullscreen.displayName}
-          </p>
-        </div>
+      {openIndex !== -1 && (
+        <PhotoViewer
+          photos={visiblePhotos}
+          index={openIndex}
+          onIndexChange={showPhoto}
+          onClose={closePhoto}
+        />
       )}
     </div>
   )

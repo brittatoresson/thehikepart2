@@ -31,6 +31,7 @@ Avbockat betyder implementerat i koden, inte verifierat i Firebase-produktion.
 - [x] OSA: även "Tyvärr nej" tillåter svar åt flera personer. Admin och CSV-export hanterar personerna.
 - [x] Intro-animation vid första öppningen varje dag: ett kuvert med Johannas eget lacksigill (BJ-monogram) öppnas och startsidan stiger upp ur det som ett litet kort och växer till full storlek. Hoppas över med tryck; `?intro=1` spelar den igen.
 - [x] Foto: välj och ladda upp flera bilder samtidigt (tre åt gången parallellt, resten köas). Bilderna skalas ned i webbläsaren till högst 2560 px som JPEG innan uppladdning, vilket gör uppladdning och galleri snabbare och tar bort EXIF/GPS. HEIC som webbläsaren inte kan läsa och GIF laddas upp oförändrade.
+- [x] Foto: helskärmsvisningen stängs med telefonens bakåtknapp precis som med krysset (öppen bild ligger i adressen som `?bild=<id>`). Svep mellan bilderna i aktuell filtrering; pilar och Escape fungerar på dator. Svep lägger inga nya historiksteg, så bakåt stänger alltid direkt.
 
 ## Övriga frågor
 
