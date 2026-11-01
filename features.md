@@ -6,7 +6,7 @@ Avbockat betyder implementerat i koden, inte verifierat i Firebase-produktion.
 
 - [ ] Fundera över vilken inloggningslösning som passar appen bäst.
 - [ ] Johanna vill ha en finare logga - hon återkommer med bild.
-- [ ] Ny font på Britta och Johanna - samma som på inbjudan. Pinyon Script används nu; överensstämmelse med inbjudan återstår att bekräfta.
+- [ ] Ny font på Britta och Johanna - samma som på inbjudan. Imperial Script används nu (bytt från Pinyon Script 1 nov 2026 för ett klassiskt &-tecken); överensstämmelse med inbjudan återstår att bekräfta.
 - [ ] "Vill du få uppdateringar" - ska det verkligen vara valfritt? Webbpush/PWA finns implementerat, men plattformsverifiering och beslut om upplägget återstår.
 - [ ] Adress: addera Rappesta kyrka; adress till ladan kommer senare.
 - [x] FAQ: vigseln hålls inomhus. Uppdaterat standardsvar; befintlig adminsparad FAQ måste uppdateras separat.
