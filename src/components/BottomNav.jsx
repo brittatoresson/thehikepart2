@@ -63,6 +63,11 @@ export default function BottomNav() {
   const isAdmin = userProfile?.role === 'admin'
   const items = isAdmin ? [...guestItems, adminItem] : guestItems
 
+  // Ny flik börjar alltid överst. Tryck på aktiv flik scrollar mjukt upp, som i mobilappar.
+  function scrollToTop(isActive) {
+    window.scrollTo({ top: 0, behavior: isActive ? 'smooth' : 'instant' })
+  }
+
   return (
     <nav className="bottom-nav" aria-label="Huvudnavigation">
       {items.map(({ to, label, Icon, end }) => (
@@ -71,6 +76,7 @@ export default function BottomNav() {
           to={to}
           end={end}
           className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+          onClick={event => scrollToTop(event.currentTarget.classList.contains('active'))}
         >
           <Icon />
           <span>{label}</span>
