@@ -1,10 +1,17 @@
 /* ─── Intro: kuvertet öppnas och startsidan stiger upp ur det ─── */
 .app--intro {
-  /* Inbjudans pappersfärg som bakgrund, linnefärgat kuvert, sigill i appens mörka salvia */
+  /* Inbjudans pappersfärg som bakgrund. Kuvertet är åldrat, gulnat papper med tefläckade
+     kanter (förlaga: Johannas vintagekuvert, nov 2026); sigillet är appens mörka salvia */
   --intro-backdrop: #F8F3EE;
-  --intro-env: #E7DDCA;
-  --intro-env-dark: #D9CCB4;
-  --intro-env-deep: #CDBDA2;
+  --intro-env: #F4EBCF;
+  --intro-env-dark: #E9DCB7;
+  --intro-env-deep: #D7C7A0;
+  --intro-stain: 128, 96, 48; /* brun ton för fläckar och slitna kanter, används i rgba() */
+
+  /* Pappersstruktur: fin fiberkornighet och grövre fläckighet, två SVG-brus (feTurbulence)
+     som multipliceras över pappersfärgen. Inga bildfiler behövs. */
+  --intro-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.27 0 0 0 0 0.12 0.4 0 0 0 -0.18'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E");
+  --intro-mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.42 0 0 0 0 0.2 0.8 0 0 0 -0.36'/%3E%3C/filter%3E%3Crect width='480' height='480' filter='url(%23m)'/%3E%3C/svg%3E");
 
   /* Geometri: kortet är sidan själv (bredd x 1,42), skalad till 0,6 inne i kuvertet.
      Kuvertet följer sidbredden så att kortet alltid ryms, och står något under mitten. */
@@ -145,11 +152,19 @@
     intro-env-out 900ms cubic-bezier(0.5, 0, 0.8, 0.4) var(--t-out) forwards;
 }
 
+/* Insidan, syns i urtaget när fliken öppnats: mörkare papper, skuggat under fliken */
 .intro-env-back {
   z-index: 1;
-  background: var(--intro-env-deep);
-  border-radius: 5px;
-  box-shadow: 0 18px 40px -18px rgba(65, 75, 64, 0.35);
+  border-radius: 3px;
+  background:
+    var(--intro-grain),
+    var(--intro-mottle),
+    linear-gradient(180deg, rgba(var(--intro-stain), 0.25), transparent 35%),
+    var(--intro-env-deep);
+  background-blend-mode: multiply, multiply, normal, normal;
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--intro-stain), 0.2),
+    0 18px 40px -18px rgba(65, 75, 64, 0.35);
 }
 
 .intro-flap-wrap {
@@ -165,15 +180,35 @@
   height: 100%;
   transform-origin: 50% 0;
   transform: perspective(700px) rotateX(0deg);
-  filter: drop-shadow(0 2px 2px rgba(60, 50, 30, 0.14));
+  filter: drop-shadow(0 2px 3px rgba(70, 50, 20, 0.22));
   animation: intro-flap-open 900ms cubic-bezier(0.45, 0.05, 0.3, 1) var(--t-flap) forwards;
 }
 
+/* Fliken: ljusast vid vikningen, gulnad mot spetsen, en tefläck uppe till vänster */
 .intro-flap-shape {
+  position: relative;
   width: 100%;
   height: 100%;
   clip-path: polygon(0 0, 100% 0, 50% 58%);
-  background: linear-gradient(180deg, var(--intro-env) 0%, var(--intro-env-dark) 100%);
+  background:
+    var(--intro-grain),
+    var(--intro-mottle),
+    radial-gradient(50% 75% at 4% 0%, rgba(var(--intro-stain), 0.36), transparent 70%),
+    radial-gradient(35% 60% at 100% 8%, rgba(var(--intro-stain), 0.16), transparent 70%),
+    radial-gradient(30% 40% at 50% 58%, rgba(var(--intro-stain), 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(255, 252, 240, 0.55), transparent 9%),
+    linear-gradient(180deg, var(--intro-env) 0%, var(--intro-env-dark) 100%);
+  background-blend-mode: multiply, multiply, normal, normal, normal, normal, normal;
+}
+
+/* Flikens sneda kanter: ett smalt, mörkare slitet band längs kanten (polygonen är
+   ytterkanten plus samma kant flyttad 2,3 px uppåt, vilket ger jämn bredd) */
+.intro-flap-shape::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, 50% 58%, 100% 0, calc(100% - 3px) 0, 50% calc(58% - 2.3px), 3px 0);
+  background: rgba(var(--intro-stain), 0.3);
 }
 
 .intro-pocket-wrap {
@@ -181,12 +216,72 @@
   filter: drop-shadow(0 -1px 1px rgba(60, 50, 30, 0.1));
 }
 
+/* Framsidan: gulnat papper med slitna ytterkanter och tefläckar i nederhörnen */
 .intro-pocket-shape {
+  position: relative;
   width: 100%;
   height: 100%;
   clip-path: polygon(0 0, 50% 54%, 100% 0, 100% 100%, 0 100%);
-  background: linear-gradient(180deg, var(--intro-env-dark) 0%, var(--intro-env) 50%, var(--intro-env) 100%);
-  border-radius: 0 0 5px 5px;
+  border-radius: 0 0 3px 3px;
+  background:
+    var(--intro-grain),
+    var(--intro-mottle),
+    radial-gradient(55% 45% at 0% 100%, rgba(var(--intro-stain), 0.34), transparent 70%),
+    radial-gradient(45% 50% at 100% 100%, rgba(var(--intro-stain), 0.26), transparent 70%),
+    radial-gradient(28% 55% at 100% 40%, rgba(var(--intro-stain), 0.18), transparent 70%),
+    radial-gradient(75% 75% at 50% 45%, transparent 45%, rgba(var(--intro-stain), 0.12) 100%),
+    linear-gradient(90deg, rgba(var(--intro-stain), 0.22), transparent 5%, transparent 95%, rgba(var(--intro-stain), 0.22)),
+    linear-gradient(0deg, rgba(var(--intro-stain), 0.26), transparent 7%),
+    linear-gradient(180deg, var(--intro-env-dark) 0%, var(--intro-env) 45%, var(--intro-env) 100%);
+  background-blend-mode: multiply, multiply, normal, normal, normal, normal, normal, normal, normal;
+}
+
+/* Urtagets kant: en ljus papperskant som syns när fliken är öppen */
+.intro-pocket-shape::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, 50% 54%, 100% 0, 100% 2px, 50% calc(54% + 2px), 0 2px);
+  background: rgba(255, 252, 240, 0.6);
+}
+
+/* Sidoflikarnas vikningar: två diagonaler från nederhörnen upp mot sigillet, med en
+   ljus papperskant ovanför linjen och en mjuk skugga under den */
+.intro-pocket-wrap::before,
+.intro-pocket-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  z-index: 1;
+  width: 50%;
+  height: 40%;
+  pointer-events: none;
+}
+
+.intro-pocket-wrap::before {
+  left: 0;
+  border-radius: 0 0 0 3px;
+  background: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 1.2px),
+    rgba(255, 252, 240, 0.5) calc(50% - 1.2px),
+    rgba(255, 252, 240, 0.5) 50%,
+    rgba(var(--intro-stain), 0.26) 50%,
+    rgba(var(--intro-stain), 0) calc(50% + 8px)
+  );
+}
+
+.intro-pocket-wrap::after {
+  right: 0;
+  border-radius: 0 0 3px 0;
+  background: linear-gradient(
+    to bottom left,
+    transparent calc(50% - 1.2px),
+    rgba(255, 252, 240, 0.5) calc(50% - 1.2px),
+    rgba(255, 252, 240, 0.5) 50%,
+    rgba(var(--intro-stain), 0.26) 50%,
+    rgba(var(--intro-stain), 0) calc(50% + 8px)
+  );
 }
 
 /* Sigillet är Johannas egen bild (src/assets/seal.png, genomskinlig bakgrund) */
